@@ -200,6 +200,7 @@ final class BridgeServer {
     }
 
     private void sendHtml(HttpExchange ex, Window window, String html) throws IOException {
+        window.channel().markDocumentRequest();
         String injected = inject(html, window.token(), runtime.config.isDevMode());
         respond(ex, 200, "text/html; charset=utf-8", injected.getBytes(StandardCharsets.UTF_8));
     }
