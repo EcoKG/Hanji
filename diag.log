@@ -1,20 +1,334 @@
 ProductName:		macOS
 ProductVersion:		26.6.2
 BuildVersion:		25G83
-  2542 plain event focus min=false max=false vis=true foc=true
-  2565 plain event show min=false max=false vis=true foc=true
-  3312 plain minimize() min=false max=false vis=true foc=true
-  4065 plain event minimize min=true max=false vis=false foc=false
-  4066 plain event hide min=true max=false vis=false foc=false
-  4076 plain RESULT minimized=true min=true max=false vis=false foc=false
-  4079 plain event blur min=true max=false vis=false foc=false
-  4614 plain event restore min=false max=false vis=true foc=true
-  4616 plain event show min=false max=false vis=true foc=true
-  4651 plain restored? true min=false max=false vis=true foc=true
-(node:1182) UnhandledPromiseRejectionWarning: Error: ERR_FAILED (-2) loading 'data:text/html,<h1>diag</h1>'
-    at rejectAndCleanup (node:electron/js2c/browser_init:1:96591)
-    at finishListener (node:electron/js2c/browser_init:1:96753)
-    at WebContents.stopLoadingListener (node:electron/js2c/browser_init:1:97140)
-    at WebContents.emit (node:events:526:24)
-(Use `Electron --trace-warnings ...` to show where the warning was created)
-(node:1182) UnhandledPromiseRejectionWarning: Unhandled promise rejection. This error originated either by throwing inside of an async function without a catch block, or by rejecting a promise which was not handled with .catch(). To terminate the node process on unhandled promise rejection, use the CLI flag `--unhandled-rejections=strict` (see https://nodejs.org/api/cli.html#cli_unhandled_rejections_mode). (rejection id: 1)
+  1477 plain event focus min=false max=false vis=true foc=true
+  1498 plain event show min=false max=false vis=true foc=true
+  2258 plain minimize() min=false max=false vis=true foc=true
+  2864 plain event minimize min=true max=false vis=false foc=false
+  2864 plain event hide min=true max=false vis=false foc=false
+  2870 plain RESULT minimized=true min=true max=false vis=false foc=false
+  2883 plain event blur min=true max=false vis=false foc=false
+  3418 plain event restore min=false max=false vis=true foc=true
+  3420 plain event show min=false max=false vis=true foc=true
+  3449 plain restored? true min=false max=false vis=true foc=true
+  3780 max-unmax-immediate event focus min=false max=false vis=true foc=true
+  3802 max-unmax-immediate event show min=false max=false vis=true foc=true
+  5083 max-unmax-immediate event maximize min=false max=true vis=true foc=true
+  5087 max-unmax-immediate maximized? true min=false max=true vis=true foc=true
+  5088 max-unmax-immediate event unmaximize min=false max=false vis=true foc=true
+  5088 max-unmax-immediate normal? true min=false max=false vis=true foc=true
+  5088 max-unmax-immediate minimize() min=false max=false vis=true foc=true
+  5729 max-unmax-immediate event minimize min=true max=false vis=false foc=false
+  5731 max-unmax-immediate event hide min=true max=false vis=false foc=false
+  5742 max-unmax-immediate RESULT minimized=true min=true max=false vis=false foc=false
+  5742 max-unmax-immediate event blur min=true max=false vis=false foc=false
+  6285 max-unmax-immediate event restore min=false max=false vis=true foc=true
+  6286 max-unmax-immediate event show min=false max=false vis=true foc=true
+  6307 max-unmax-immediate restored? true min=false max=false vis=true foc=true
+  6534 max-unmax-delay1s event focus min=false max=false vis=true foc=true
+  6549 max-unmax-delay1s event show min=false max=false vis=true foc=true
+  7838 max-unmax-delay1s event maximize min=false max=true vis=true foc=true
+  7838 max-unmax-delay1s maximized? true min=false max=true vis=true foc=true
+  7841 max-unmax-delay1s event unmaximize min=false max=false vis=true foc=true
+  7842 max-unmax-delay1s normal? true min=false max=false vis=true foc=true
+  8843 max-unmax-delay1s minimize() min=false max=false vis=true foc=true
+  9593 max-unmax-delay1s event minimize min=true max=false vis=false foc=false
+  9594 max-unmax-delay1s event hide min=true max=false vis=false foc=false
+  9599 max-unmax-delay1s RESULT minimized=true min=true max=false vis=false foc=false
+  9599 max-unmax-delay1s event blur min=true max=false vis=false foc=false
+ 10132 max-unmax-delay1s event restore min=false max=false vis=true foc=true
+ 10134 max-unmax-delay1s event show min=false max=false vis=true foc=true
+ 10152 max-unmax-delay1s restored? true min=false max=false vis=true foc=true
+ 10419 max-unmax-retry event focus min=false max=false vis=true foc=true
+ 10434 max-unmax-retry event show min=false max=false vis=true foc=true
+ 11720 max-unmax-retry event maximize min=false max=true vis=true foc=true
+ 11721 max-unmax-retry maximized? true min=false max=true vis=true foc=true
+ 11722 max-unmax-retry event unmaximize min=false max=false vis=true foc=true
+ 11723 max-unmax-retry normal? true min=false max=false vis=true foc=true
+ 11723 max-unmax-retry minimize() min=false max=false vis=true foc=true
+ 12292 max-unmax-retry event minimize min=true max=false vis=false foc=false
+ 12312 max-unmax-retry event hide min=true max=false vis=false foc=false
+ 12318 max-unmax-retry RESULT minimized=true min=true max=false vis=false foc=false
+ 12319 max-unmax-retry event blur min=true max=false vis=false foc=false
+ 12857 max-unmax-retry event restore min=false max=false vis=true foc=true
+ 12858 max-unmax-retry event show min=false max=false vis=true foc=true
+ 12861 max-unmax-retry restored? true min=false max=false vis=true foc=true
+ 13063 plain event focus min=false max=false vis=true foc=true
+ 13072 plain event show min=false max=false vis=true foc=true
+ 13859 plain minimize() min=false max=false vis=true foc=true
+ 14407 plain event minimize min=true max=false vis=false foc=false
+ 14408 plain event hide min=true max=false vis=false foc=false
+ 14413 plain RESULT minimized=true min=true max=false vis=false foc=false
+ 14414 plain event blur min=true max=false vis=false foc=false
+ 14964 plain event restore min=false max=false vis=true foc=true
+ 14965 plain event show min=false max=false vis=true foc=true
+ 14966 plain restored? true min=false max=false vis=true foc=true
+ 15169 max-unmax-immediate event focus min=false max=false vis=true foc=true
+ 15188 max-unmax-immediate event show min=false max=false vis=true foc=true
+ 16480 max-unmax-immediate event maximize min=false max=true vis=true foc=true
+ 16480 max-unmax-immediate maximized? true min=false max=true vis=true foc=true
+ 16483 max-unmax-immediate event unmaximize min=false max=false vis=true foc=true
+ 16484 max-unmax-immediate normal? true min=false max=false vis=true foc=true
+ 16484 max-unmax-immediate minimize() min=false max=false vis=true foc=true
+ 17029 max-unmax-immediate event minimize min=true max=false vis=false foc=false
+ 17029 max-unmax-immediate event hide min=true max=false vis=false foc=false
+ 17051 max-unmax-immediate RESULT minimized=true min=true max=false vis=false foc=false
+ 17051 max-unmax-immediate event blur min=true max=false vis=false foc=false
+ 17580 max-unmax-immediate event restore min=false max=false vis=true foc=true
+ 17604 max-unmax-immediate event show min=false max=false vis=true foc=true
+ 17612 max-unmax-immediate restored? true min=false max=false vis=true foc=true
+ 17816 max-unmax-delay1s event focus min=false max=false vis=true foc=true
+ 17839 max-unmax-delay1s event show min=false max=false vis=true foc=true
+ 19119 max-unmax-delay1s event maximize min=false max=true vis=true foc=true
+ 19119 max-unmax-delay1s maximized? true min=false max=true vis=true foc=true
+ 19122 max-unmax-delay1s event unmaximize min=false max=false vis=true foc=true
+ 19123 max-unmax-delay1s normal? true min=false max=false vis=true foc=true
+ 20126 max-unmax-delay1s minimize() min=false max=false vis=true foc=true
+ 20682 max-unmax-delay1s event minimize min=true max=false vis=false foc=false
+ 20699 max-unmax-delay1s event hide min=true max=false vis=false foc=false
+ 20724 max-unmax-delay1s RESULT minimized=true min=true max=false vis=false foc=false
+ 20724 max-unmax-delay1s event blur min=true max=false vis=false foc=false
+ 21260 max-unmax-delay1s event restore min=false max=false vis=true foc=true
+ 21261 max-unmax-delay1s event show min=false max=false vis=true foc=true
+ 21264 max-unmax-delay1s restored? true min=false max=false vis=true foc=true
+ 21441 max-unmax-retry event focus min=false max=false vis=true foc=true
+ 21456 max-unmax-retry event show min=false max=false vis=true foc=true
+ 22745 max-unmax-retry event maximize min=false max=true vis=true foc=true
+ 22745 max-unmax-retry maximized? true min=false max=true vis=true foc=true
+ 22747 max-unmax-retry event unmaximize min=false max=false vis=true foc=true
+ 22747 max-unmax-retry normal? true min=false max=false vis=true foc=true
+ 22747 max-unmax-retry minimize() min=false max=false vis=true foc=true
+ 23291 max-unmax-retry event minimize min=true max=false vis=false foc=false
+ 23294 max-unmax-retry event hide min=true max=false vis=false foc=false
+ 23304 max-unmax-retry RESULT minimized=true min=true max=false vis=false foc=false
+ 23305 max-unmax-retry event blur min=true max=false vis=false foc=false
+ 23838 max-unmax-retry event restore min=false max=false vis=true foc=true
+ 23839 max-unmax-retry event show min=false max=false vis=true foc=true
+ 23843 max-unmax-retry restored? true min=false max=false vis=true foc=true
+ 24038 plain event focus min=false max=false vis=true foc=true
+ 24059 plain event show min=false max=false vis=true foc=true
+ 24835 plain minimize() min=false max=false vis=true foc=true
+ 25374 plain event minimize min=true max=false vis=false foc=false
+ 25374 plain event hide min=true max=false vis=false foc=false
+ 25395 plain RESULT minimized=true min=true max=false vis=false foc=false
+ 25402 plain event blur min=true max=false vis=false foc=false
+ 25944 plain event restore min=false max=false vis=true foc=true
+ 25945 plain event show min=false max=false vis=true foc=true
+ 25948 plain restored? true min=false max=false vis=true foc=true
+ 26103 max-unmax-immediate event focus min=false max=false vis=true foc=true
+ 26130 max-unmax-immediate event show min=false max=false vis=true foc=true
+ 27407 max-unmax-immediate event maximize min=false max=true vis=true foc=true
+ 27408 max-unmax-immediate maximized? true min=false max=true vis=true foc=true
+ 27409 max-unmax-immediate event unmaximize min=false max=false vis=true foc=true
+ 27409 max-unmax-immediate normal? true min=false max=false vis=true foc=true
+ 27409 max-unmax-immediate minimize() min=false max=false vis=true foc=true
+ 27956 max-unmax-immediate event minimize min=true max=false vis=false foc=false
+ 27956 max-unmax-immediate event hide min=true max=false vis=false foc=false
+ 27957 max-unmax-immediate RESULT minimized=true min=true max=false vis=false foc=false
+ 28500 max-unmax-immediate event restore min=false max=false vis=true foc=true
+ 28501 max-unmax-immediate event show min=false max=false vis=true foc=true
+ 28505 max-unmax-immediate event blur min=false max=false vis=true foc=true
+ 28506 max-unmax-immediate restored? true min=false max=false vis=true foc=true
+ 28671 max-unmax-delay1s event focus min=false max=false vis=true foc=true
+ 28694 max-unmax-delay1s event show min=false max=false vis=true foc=true
+ 29980 max-unmax-delay1s event maximize min=false max=true vis=true foc=true
+ 29980 max-unmax-delay1s maximized? true min=false max=true vis=true foc=true
+ 29983 max-unmax-delay1s event unmaximize min=false max=false vis=true foc=true
+ 29983 max-unmax-delay1s normal? true min=false max=false vis=true foc=true
+ 30985 max-unmax-delay1s minimize() min=false max=false vis=true foc=true
+ 31527 max-unmax-delay1s event minimize min=true max=false vis=false foc=false
+ 31534 max-unmax-delay1s event hide min=true max=false vis=false foc=false
+ 31538 max-unmax-delay1s RESULT minimized=true min=true max=false vis=false foc=false
+ 31545 max-unmax-delay1s event blur min=true max=false vis=false foc=false
+ 32083 max-unmax-delay1s event restore min=false max=false vis=true foc=true
+ 32084 max-unmax-delay1s event show min=false max=false vis=true foc=true
+ 32086 max-unmax-delay1s restored? true min=false max=false vis=true foc=true
+ 32292 max-unmax-retry event focus min=false max=false vis=true foc=true
+ 32314 max-unmax-retry event show min=false max=false vis=true foc=true
+ 33592 max-unmax-retry event maximize min=false max=true vis=true foc=true
+ 33592 max-unmax-retry maximized? true min=false max=true vis=true foc=true
+ 33594 max-unmax-retry event unmaximize min=false max=false vis=true foc=true
+ 33594 max-unmax-retry normal? true min=false max=false vis=true foc=true
+ 33594 max-unmax-retry minimize() min=false max=false vis=true foc=true
+ 34151 max-unmax-retry event minimize min=true max=false vis=false foc=false
+ 34152 max-unmax-retry event hide min=true max=false vis=false foc=false
+ 34180 max-unmax-retry RESULT minimized=true min=true max=false vis=false foc=false
+ 34181 max-unmax-retry event blur min=true max=false vis=false foc=false
+ 34721 max-unmax-retry event restore min=false max=false vis=true foc=true
+ 34722 max-unmax-retry event show min=false max=false vis=true foc=true
+ 34732 max-unmax-retry restored? true min=false max=false vis=true foc=true
+ 34903 plain event focus min=false max=false vis=true foc=true
+ 34929 plain event show min=false max=false vis=true foc=true
+ 35702 plain minimize() min=false max=false vis=true foc=true
+ 36247 plain event minimize min=true max=false vis=false foc=false
+ 36248 plain event hide min=true max=false vis=false foc=false
+ 36267 plain RESULT minimized=true min=true max=false vis=false foc=false
+ 36267 plain event blur min=true max=false vis=false foc=false
+ 36816 plain event restore min=false max=false vis=true foc=true
+ 36817 plain event show min=false max=false vis=true foc=true
+ 36821 plain restored? true min=false max=false vis=true foc=true
+ 36985 max-unmax-immediate event focus min=false max=false vis=true foc=true
+ 37015 max-unmax-immediate event show min=false max=false vis=true foc=true
+ 38295 max-unmax-immediate event maximize min=false max=true vis=true foc=true
+ 38296 max-unmax-immediate maximized? true min=false max=true vis=true foc=true
+ 38297 max-unmax-immediate event unmaximize min=false max=false vis=true foc=true
+ 38297 max-unmax-immediate normal? true min=false max=false vis=true foc=true
+ 38297 max-unmax-immediate minimize() min=false max=false vis=true foc=true
+ 38848 max-unmax-immediate event minimize min=true max=false vis=false foc=false
+ 38848 max-unmax-immediate event hide min=true max=false vis=false foc=false
+ 38869 max-unmax-immediate RESULT minimized=true min=true max=false vis=false foc=false
+ 38870 max-unmax-immediate event blur min=true max=false vis=false foc=false
+ 39420 max-unmax-immediate event restore min=false max=false vis=true foc=true
+ 39422 max-unmax-immediate event show min=false max=false vis=true foc=true
+ 39433 max-unmax-immediate restored? true min=false max=false vis=true foc=true
+ 39585 max-unmax-delay1s event focus min=false max=false vis=true foc=true
+ 39603 max-unmax-delay1s event show min=false max=false vis=true foc=true
+ 40892 max-unmax-delay1s event maximize min=false max=true vis=true foc=true
+ 40892 max-unmax-delay1s maximized? true min=false max=true vis=true foc=true
+ 40894 max-unmax-delay1s event unmaximize min=false max=false vis=true foc=true
+ 40894 max-unmax-delay1s normal? true min=false max=false vis=true foc=true
+ 41897 max-unmax-delay1s minimize() min=false max=false vis=true foc=true
+ 42450 max-unmax-delay1s event minimize min=true max=false vis=false foc=false
+ 42459 max-unmax-delay1s event hide min=true max=false vis=false foc=false
+ 42468 max-unmax-delay1s RESULT minimized=true min=true max=false vis=false foc=false
+ 42469 max-unmax-delay1s event blur min=true max=false vis=false foc=false
+ 43063 max-unmax-delay1s event restore min=false max=false vis=true foc=true
+ 43064 max-unmax-delay1s event show min=false max=false vis=true foc=true
+ 43068 max-unmax-delay1s restored? true min=false max=false vis=true foc=true
+ 43339 max-unmax-retry event focus min=false max=false vis=true foc=true
+ 43369 max-unmax-retry event show min=false max=false vis=true foc=true
+ 44642 max-unmax-retry event maximize min=false max=true vis=true foc=true
+ 44643 max-unmax-retry maximized? true min=false max=true vis=true foc=true
+ 44644 max-unmax-retry event unmaximize min=false max=false vis=true foc=true
+ 44644 max-unmax-retry normal? true min=false max=false vis=true foc=true
+ 44644 max-unmax-retry minimize() min=false max=false vis=true foc=true
+ 45206 max-unmax-retry event minimize min=true max=false vis=false foc=false
+ 45208 max-unmax-retry event hide min=true max=false vis=false foc=false
+ 45221 max-unmax-retry RESULT minimized=true min=true max=false vis=false foc=false
+ 45222 max-unmax-retry event blur min=true max=false vis=false foc=false
+ 45754 max-unmax-retry event restore min=false max=false vis=true foc=true
+ 45755 max-unmax-retry event show min=false max=false vis=true foc=true
+ 45757 max-unmax-retry restored? true min=false max=false vis=true foc=true
+ 45986 plain event focus min=false max=false vis=true foc=true
+ 46003 plain event show min=false max=false vis=true foc=true
+ 46778 plain minimize() min=false max=false vis=true foc=true
+ 47314 plain event minimize min=true max=false vis=false foc=false
+ 47315 plain event hide min=true max=false vis=false foc=false
+ 47332 plain RESULT minimized=true min=true max=false vis=false foc=false
+ 47333 plain event blur min=true max=false vis=false foc=false
+ 47861 plain event restore min=false max=false vis=true foc=true
+ 47861 plain event show min=false max=false vis=true foc=true
+ 47864 plain restored? true min=false max=false vis=true foc=true
+ 48050 max-unmax-immediate event focus min=false max=false vis=true foc=true
+ 48076 max-unmax-immediate event show min=false max=false vis=true foc=true
+ 49352 max-unmax-immediate event maximize min=false max=true vis=true foc=true
+ 49358 max-unmax-immediate maximized? true min=false max=true vis=true foc=true
+ 49361 max-unmax-immediate event unmaximize min=false max=false vis=true foc=true
+ 49361 max-unmax-immediate normal? true min=false max=false vis=true foc=true
+ 49361 max-unmax-immediate minimize() min=false max=false vis=true foc=true
+ 49920 max-unmax-immediate event minimize min=true max=false vis=false foc=false
+ 49921 max-unmax-immediate event hide min=true max=false vis=false foc=false
+ 49968 max-unmax-immediate RESULT minimized=true min=true max=false vis=false foc=false
+ 49968 max-unmax-immediate event blur min=true max=false vis=false foc=false
+ 50532 max-unmax-immediate event restore min=false max=false vis=true foc=true
+ 50534 max-unmax-immediate event show min=false max=false vis=true foc=true
+ 50541 max-unmax-immediate restored? true min=false max=false vis=true foc=true
+ 50963 max-unmax-delay1s event focus min=false max=false vis=true foc=true
+ 50990 max-unmax-delay1s event show min=false max=false vis=true foc=true
+ 52272 max-unmax-delay1s event maximize min=false max=true vis=true foc=true
+ 52273 max-unmax-delay1s maximized? true min=false max=true vis=true foc=true
+ 52278 max-unmax-delay1s event unmaximize min=false max=false vis=true foc=true
+ 52278 max-unmax-delay1s normal? true min=false max=false vis=true foc=true
+ 53380 max-unmax-delay1s minimize() min=false max=false vis=true foc=true
+ 54116 max-unmax-delay1s event minimize min=true max=false vis=false foc=false
+ 54116 max-unmax-delay1s event hide min=true max=false vis=false foc=false
+ 54128 max-unmax-delay1s RESULT minimized=true min=true max=false vis=false foc=false
+ 54135 max-unmax-delay1s event blur min=true max=false vis=false foc=false
+ 54682 max-unmax-delay1s event restore min=false max=false vis=true foc=true
+ 54682 max-unmax-delay1s event show min=false max=false vis=true foc=true
+ 54700 max-unmax-delay1s restored? true min=false max=false vis=true foc=true
+ 54937 max-unmax-retry event focus min=false max=false vis=true foc=true
+ 54959 max-unmax-retry event show min=false max=false vis=true foc=true
+ 56235 max-unmax-retry event maximize min=false max=true vis=true foc=true
+ 56236 max-unmax-retry maximized? true min=false max=true vis=true foc=true
+ 56237 max-unmax-retry event unmaximize min=false max=false vis=true foc=true
+ 56238 max-unmax-retry normal? true min=false max=false vis=true foc=true
+ 56238 max-unmax-retry minimize() min=false max=false vis=true foc=true
+ 56787 max-unmax-retry event minimize min=true max=false vis=false foc=false
+ 56788 max-unmax-retry event hide min=true max=false vis=false foc=false
+ 56804 max-unmax-retry RESULT minimized=true min=true max=false vis=false foc=false
+ 56811 max-unmax-retry event blur min=true max=false vis=false foc=false
+ 57337 max-unmax-retry event restore min=false max=false vis=true foc=true
+ 57338 max-unmax-retry event show min=false max=false vis=true foc=true
+ 57338 max-unmax-retry restored? true min=false max=false vis=true foc=true
+ 57697 custom-menu-max-unmax event focus min=false max=false vis=true foc=true
+ 57708 custom-menu-max-unmax event show min=false max=false vis=true foc=true
+ 58995 custom-menu-max-unmax event maximize min=false max=true vis=true foc=true
+ 58996 custom-menu-max-unmax maximized? true min=false max=true vis=true foc=true
+ 58999 custom-menu-max-unmax event unmaximize min=false max=false vis=true foc=true
+ 58999 custom-menu-max-unmax normal? true min=false max=false vis=true foc=true
+ 58999 custom-menu-max-unmax minimize() min=false max=false vis=true foc=true
+ 59544 custom-menu-max-unmax event minimize min=true max=false vis=false foc=false
+ 59545 custom-menu-max-unmax event hide min=true max=false vis=false foc=false
+ 59561 custom-menu-max-unmax RESULT minimized=true min=true max=false vis=false foc=false
+ 59561 custom-menu-max-unmax event blur min=true max=false vis=false foc=false
+ 60109 custom-menu-max-unmax event restore min=false max=false vis=true foc=true
+ 60111 custom-menu-max-unmax event show min=false max=false vis=true foc=true
+ 60130 custom-menu-max-unmax restored? true min=false max=false vis=true foc=true
+ 60302 custom-menu-max-unmax event focus min=false max=false vis=true foc=true
+ 60328 custom-menu-max-unmax event show min=false max=false vis=true foc=true
+ 61608 custom-menu-max-unmax event maximize min=false max=true vis=true foc=true
+ 61608 custom-menu-max-unmax maximized? true min=false max=true vis=true foc=true
+ 61609 custom-menu-max-unmax event unmaximize min=false max=false vis=true foc=true
+ 61609 custom-menu-max-unmax normal? true min=false max=false vis=true foc=true
+ 61609 custom-menu-max-unmax minimize() min=false max=false vis=true foc=true
+ 62161 custom-menu-max-unmax event minimize min=true max=false vis=false foc=false
+ 62162 custom-menu-max-unmax event hide min=true max=false vis=false foc=false
+ 62177 custom-menu-max-unmax RESULT minimized=true min=true max=false vis=false foc=false
+ 62181 custom-menu-max-unmax event blur min=true max=false vis=false foc=false
+ 62713 custom-menu-max-unmax event restore min=false max=false vis=true foc=true
+ 62714 custom-menu-max-unmax event show min=false max=false vis=true foc=true
+ 62735 custom-menu-max-unmax restored? true min=false max=false vis=true foc=true
+ 62915 custom-menu-max-unmax event focus min=false max=false vis=true foc=true
+ 62929 custom-menu-max-unmax event show min=false max=false vis=true foc=true
+ 64221 custom-menu-max-unmax event maximize min=false max=true vis=true foc=true
+ 64222 custom-menu-max-unmax maximized? true min=false max=true vis=true foc=true
+ 64225 custom-menu-max-unmax event unmaximize min=false max=false vis=true foc=true
+ 64225 custom-menu-max-unmax normal? true min=false max=false vis=true foc=true
+ 64225 custom-menu-max-unmax minimize() min=false max=false vis=true foc=true
+ 64774 custom-menu-max-unmax event minimize min=true max=false vis=false foc=false
+ 64774 custom-menu-max-unmax event hide min=true max=false vis=false foc=false
+ 64775 custom-menu-max-unmax RESULT minimized=true min=true max=false vis=false foc=false
+ 64776 custom-menu-max-unmax event blur min=true max=false vis=false foc=false
+ 65333 custom-menu-max-unmax event restore min=false max=false vis=true foc=true
+ 65334 custom-menu-max-unmax event show min=false max=false vis=true foc=true
+ 65356 custom-menu-max-unmax restored? true min=false max=false vis=true foc=true
+ 65551 custom-menu-max-unmax event focus min=false max=false vis=true foc=true
+ 65563 custom-menu-max-unmax event show min=false max=false vis=true foc=true
+ 66856 custom-menu-max-unmax event maximize min=false max=true vis=true foc=true
+ 66856 custom-menu-max-unmax maximized? true min=false max=true vis=true foc=true
+ 66857 custom-menu-max-unmax event unmaximize min=false max=false vis=true foc=true
+ 66857 custom-menu-max-unmax normal? true min=false max=false vis=true foc=true
+ 66857 custom-menu-max-unmax minimize() min=false max=false vis=true foc=true
+ 67418 custom-menu-max-unmax event minimize min=true max=false vis=false foc=false
+ 67419 custom-menu-max-unmax event hide min=true max=false vis=false foc=false
+ 67464 custom-menu-max-unmax RESULT minimized=true min=true max=false vis=false foc=false
+ 67464 custom-menu-max-unmax event blur min=true max=false vis=false foc=false
+ 68017 custom-menu-max-unmax event restore min=false max=false vis=true foc=true
+ 68019 custom-menu-max-unmax event show min=false max=false vis=true foc=true
+ 68036 custom-menu-max-unmax restored? true min=false max=false vis=true foc=true
+ 68177 custom-menu-max-unmax event focus min=false max=false vis=true foc=true
+ 68198 custom-menu-max-unmax event show min=false max=false vis=true foc=true
+ 69481 custom-menu-max-unmax event maximize min=false max=true vis=true foc=true
+ 69482 custom-menu-max-unmax maximized? true min=false max=true vis=true foc=true
+ 69482 custom-menu-max-unmax event unmaximize min=false max=false vis=true foc=true
+ 69483 custom-menu-max-unmax normal? true min=false max=false vis=true foc=true
+ 69483 custom-menu-max-unmax minimize() min=false max=false vis=true foc=true
+ 70023 custom-menu-max-unmax event minimize min=true max=false vis=false foc=false
+ 70041 custom-menu-max-unmax event hide min=true max=false vis=false foc=false
+ 70049 custom-menu-max-unmax RESULT minimized=true min=true max=false vis=false foc=false
+ 70049 custom-menu-max-unmax event blur min=true max=false vis=false foc=false
+ 70576 custom-menu-max-unmax event restore min=false max=false vis=true foc=true
+ 70577 custom-menu-max-unmax event show min=false max=false vis=true foc=true
+ 70577 custom-menu-max-unmax restored? true min=false max=false vis=true foc=true
+ 70594 SUMMARY {"plain":"ooooo","max-unmax-immediate":"ooooo","max-unmax-delay1s":"ooooo","max-unmax-retry":"ooooo","custom-menu-max-unmax":"ooooo"}
