@@ -1,0 +1,29 @@
+name: diag macOS minimize
+on:
+  push:
+    branches: [diag/macos-minimize]
+permissions:
+  contents: write
+jobs:
+  mac:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Electron 44.9.3
+        run: |
+          curl -sSL -o e.zip https://github.com/electron/electron/releases/download/v44.9.3/electron-v44.9.3-darwin-arm64.zip
+          ditto -x -k e.zip electron
+      - name: Run diag
+        run: |
+          { sw_vers; system_profiler SPDisplaysDataType | grep -E "Resolution" || true; } > diag.log
+          ./electron/Electron.app/Contents/MacOS/Electron diag.js >> diag.log 2>&1 || echo "exit $?" >> diag.log
+          grep SUMMARY diag.log || true
+      - name: Publish log
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add diag.log
+          git commit -q -m "diag log ${GITHUB_RUN_ID}"
+          git push origin HEAD:diag/macos-minimize
