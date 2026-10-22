@@ -1,0 +1,3 @@
+io.hanji.host.ChromiumAppHost$Provider
+io.hanji.host.SystemBrowserHost$Provider
+io.hanji.host.ExternalHost$Provider

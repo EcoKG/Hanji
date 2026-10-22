@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hanji Todo</title>
+  <link rel="stylesheet" href="todo.css">
+</head>
+<body>
+  <main class="app">
+    <header>
+      <h1>할 일</h1>
+      <span id="summary" class="summary"></span>
+    </header>
+
+    <form id="addForm" class="add">
+      <input id="title" name="title" placeholder="무엇을 해야 하나요?" autocomplete="off">
+      <select id="priority" name="priority">
+        <option value="LOW">낮음</option>
+        <option value="NORMAL" selected>보통</option>
+        <option value="HIGH">높음</option>
+      </select>
+      <button type="submit" class="primary">추가</button>
+    </form>
+
+    <nav class="filters">
+      <button id="filterAll" type="button" data-filter="ALL">전체</button>
+      <button id="filterActive" type="button" data-filter="ACTIVE">진행 중</button>
+      <button id="filterDone" type="button" data-filter="DONE">완료</button>
+      <input id="search" type="search" placeholder="검색 (Ctrl+K)">
+    </nav>
+
+    <ul id="list" class="list"></ul>
+
+    <footer>
+      <div class="progress" title="진행률"><div id="progressBar"></div></div>
+      <button id="clearDone" type="button">완료 항목 삭제</button>
+      <button id="export" type="button">JSON 보기</button>
+    </footer>
+  </main>
+
+  <dialog id="exportDialog" class="export">
+    <pre id="exportJson"></pre>
+    <form method="dialog"><button>닫기</button></form>
+  </dialog>
+
+  <script src="todo.js"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>E2E page</title>
+  <link rel="stylesheet" href="e2e.css">
+</head>
+<body>
+  <input id="name">
+  <input type="checkbox" id="agree">
+  <button id="greet">Greet</button>
+  <span id="out">loading</span>
+
+  <ul id="items"></ul>
+  <button id="add">Add</button>
+
+  <ul id="fruits"></ul>
+  <span id="selected"></span>
+
+  <input id="mirror">
+  <span id="mirrorOut"></span>
+
+  <form id="form">
+    <input name="title" value="hello">
+    <input name="count" value="3">
+    <button id="submit" type="submit">OK</button>
+  </form>
+  <span id="formOut"></span>
+
+  <span id="called"></span>
+  <span id="news"></span>
+  <span id="early"></span>
+
+  <script>
+    // runs before Hanji has connected: the API must already exist
+    document.getElementById('early').textContent = typeof hanji.call;
+    window.app = {
+      show: function (a, b) { document.getElementById('called').textContent = a + ':' + b.k; }
+    };
+    hanji.on('news', function (d) { document.getElementById('news').textContent = d.text; });
+  </script>
+</body>
+</html>

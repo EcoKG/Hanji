@@ -1,0 +1,51 @@
+:root {
+  --bg: #f6f7f9; --card: #fff; --fg: #1f2328; --muted: #6b7280; --line: #e5e7eb;
+  --accent: #2563eb; --high: #dc2626; --normal: #d97706; --low: #059669;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #111318; --card: #1b1e24; --fg: #e5e7eb; --muted: #9ca3af; --line: #2d323b; --accent: #5b8cff; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; }
+.app { max-width: 640px; margin: 0 auto; padding: 24px 20px; display: flex; flex-direction: column; gap: 14px; min-height: 100vh; }
+header { display: flex; align-items: baseline; justify-content: space-between; }
+h1 { margin: 0; font-size: 26px; }
+.summary { color: var(--muted); font-size: 13px; }
+
+input, select, button { font: inherit; color: inherit; }
+input, select { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+button { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover:not(:disabled) { border-color: var(--accent); }
+button:disabled { opacity: .45; cursor: default; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+.add { display: flex; gap: 8px; }
+.add input { flex: 1; }
+.filters { display: flex; gap: 6px; }
+.filters button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.filters input { flex: 1; min-width: 0; margin-left: 6px; }
+
+.list { list-style: none; margin: 0; padding: 0; background: var(--card); border: 1px solid var(--line); border-radius: 10px; flex: 1; overflow: auto; }
+.item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--line); border-left: 4px solid transparent; }
+.item:last-child { border-bottom: none; }
+.item.p-high { border-left-color: var(--high); }
+.item.p-normal { border-left-color: var(--normal); }
+.item.p-low { border-left-color: var(--low); }
+.item .title { flex: 1; cursor: text; user-select: none; }
+.item.done .title { text-decoration: line-through; color: var(--muted); }
+.item .toggle { width: 18px; height: 18px; accent-color: var(--accent); }
+.item .badge { font-size: 12px; color: var(--muted); }
+.item .delete { border: none; background: none; font-size: 18px; line-height: 1; padding: 2px 8px; color: var(--muted); visibility: hidden; }
+.item:hover .delete { visibility: visible; }
+.item .delete:hover { color: var(--high); }
+.empty { padding: 28px; text-align: center; color: var(--muted); }
+
+footer { display: flex; align-items: center; gap: 8px; }
+.progress { flex: 1; height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+#progressBar { height: 100%; width: 0; background: var(--low); transition: width .3s ease; }
+
+dialog.export { border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--fg); width: min(560px, 90vw); }
+dialog.export pre { max-height: 50vh; overflow: auto; font-size: 12px; }
+dialog.export form { text-align: right; }

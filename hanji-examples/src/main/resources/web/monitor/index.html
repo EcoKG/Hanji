@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JVM Monitor</title>
+  <link rel="stylesheet" href="monitor.css">
+</head>
+<body>
+  <header>
+    <h1>JVM Monitor</h1>
+    <span id="vm" class="muted"></span>
+  </header>
+
+  <section class="tiles">
+    <div class="tile"><span class="label">Heap 사용</span><span id="heap" class="value">-</span></div>
+    <div class="tile"><span class="label">Heap 최대</span><span id="heapMax" class="value">-</span></div>
+    <div class="tile"><span class="label">스레드</span><span id="threadCount" class="value">-</span></div>
+    <div class="tile"><span class="label">CPU (프로세스)</span><span id="cpu" class="value">-</span></div>
+    <div class="tile"><span class="label">GC 횟수</span><span id="gcCount" class="value">-</span></div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Heap 사용량 (최근 60초)</h2>
+      <div class="actions">
+        <button id="alloc">64 MB 할당</button>
+        <button id="gc">GC 실행</button>
+        <button id="threads">스레드 목록</button>
+      </div>
+    </div>
+    <canvas id="chart"></canvas>
+    <div id="toast" class="muted"></div>
+  </section>
+
+  <section class="card" id="threadCard" hidden>
+    <h2>스레드</h2>
+    <table>
+      <thead><tr><th>ID</th><th>이름</th><th>상태</th><th>데몬</th></tr></thead>
+      <tbody id="threadRows"></tbody>
+    </table>
+  </section>
+
+  <script src="monitor.js"></script>
+</body>
+</html>
