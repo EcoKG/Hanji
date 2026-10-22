@@ -41,9 +41,14 @@ async function scenario(name, opts) {
   return ok;
 }
 
+app.on('window-all-closed', () => {}); // keep running between scenarios
 app.whenReady().then(async () => {
   const results = {};
-  const record = async (name, opts) => { results[name] = (results[name] || '') + ((await scenario(name, opts)) ? 'o' : 'X'); };
+  const record = async (name, opts) => {
+    let r;
+    try { r = (await scenario(name, opts)) ? 'o' : 'X'; } catch (e) { log(name, 'ERROR', e.message); r = 'E'; }
+    results[name] = (results[name] || '') + r;
+  };
   for (let i = 0; i < 5; i++) {
     await record('plain', {});
     await record('max-unmax-immediate', { bounds: true, maximize: true });
