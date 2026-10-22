@@ -42,6 +42,11 @@ jobs:
             line=$(grep -o '<testsuite [^>]*>' "$f" | head -1)
             attr() { echo "$line" | sed -nE "s/.* $1=\"([^\"]*)\".*/\1/p"; }
             echo "::notice title=$(attr name)::tests=$(attr tests) failures=$(attr failures) errors=$(attr errors) skipped=$(attr skipped)"
+            # one error annotation per failed test, with its message
+            awk -v cls="$(attr name)" '
+              /<testcase / { if (match($0, / name="[^"]*"/)) tc = substr($0, RSTART + 7, RLENGTH - 8) }
+              /<(failure|error)[ >]/ { msg = ""; if (match($0, / message="[^"]*"/)) msg = substr($0, RSTART + 10, RLENGTH - 11); print "::error title=" cls "." tc "::" substr(msg, 1, 300) }
+            ' "$f"
           done
 
       - name: Upload test reports
