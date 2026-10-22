@@ -68,6 +68,11 @@ class BrowserE2ETest {
         @UiField CheckBox agree;
         @UiField Element formOut;
         @UiField Window window;
+        @UiField Element syncOut;
+        @UiField Element keptList;
+        @UiField Element staticList;
+        @UiField Element staticItem;
+        Element kept;
         int added;
 
         E2EController() {
@@ -96,6 +101,29 @@ class BrowserE2ETest {
         void submit(Event e) {
             FormData f = e.getForm(FormData.class);
             formOut.setText(f.title() + "/" + (f.count() * 2));
+        }
+
+        /** Synchronous reads inside an event handler (nested event loop, no deadlock). */
+        @UiHandler("syncBtn")
+        void syncRead() {
+            syncOut.setText("sync:" + out.getText() + ":" + name.getAttribute("id"));
+        }
+
+        /** A Java-created element survives clear() of its parent and can be appended again. */
+        @UiHandler("reuseBtn")
+        void reuse() {
+            if (kept == null) {
+                kept = Element.create("li").setText("kept");
+            }
+            keptList.clear();
+            keptList.append(kept);
+        }
+
+        /** The same for an element of the HTML page that Java references. */
+        @UiHandler("reuseStatic")
+        void reuseStatic() {
+            staticList.clear();
+            staticList.append(staticItem);
         }
 
         @JsCallable
@@ -319,7 +347,51 @@ class BrowserE2ETest {
     }
 
     @Test
-    @Order(11)
+    @Order(15)
+    void synchronousReadsDoNotDeadlock() throws Exception {
+        String current = String.valueOf(cdp.eval("document.getElementById('out').textContent"));
+        assertEquals(current, onUi(() -> window.byId("out").getText()));        // on the UI thread
+        assertEquals(current, window.byId("out").getText());                    // from another thread
+        assertEquals("name", onUi(() -> window.byId("name").getAttribute("id")));
+        assertEquals("INPUT", onUi(() -> window.byId("name").getProperty("tagName")));
+        cdp.eval("document.getElementById('syncBtn').click()");
+        cdp.waitFor("document.getElementById('syncOut').textContent === 'sync:" + current + ":name'");
+        assertEquals("caught", onUi(() -> {
+            try {
+                window.evalSync("throw new Error('nope')");
+                return "no error";
+            } catch (JsException e) {
+                return e.getMessage().contains("nope") ? "caught" : e.getMessage();
+            }
+        }));
+    }
+
+    @Test
+    @Order(16)
+    void elementsSurviveClearWhileJavaReferencesThem() throws Exception {
+        cdp.eval("document.getElementById('reuseBtn').click()");
+        cdp.waitFor("document.querySelectorAll('#keptList li').length === 1");
+        cdp.eval("document.getElementById('reuseBtn').click()");
+        cdp.waitFor("document.querySelectorAll('#keptList li').length === 1"
+                + " && document.querySelector('#keptList li').textContent === 'kept'");
+        cdp.eval("document.getElementById('reuseStatic').click()");
+        Thread.sleep(300);
+        cdp.waitFor("document.querySelector('#staticList #staticItem')?.textContent === 'static'");
+
+        // when Java no longer references an element (its proxy was collected), the page releases it
+        E2EController controller = E2EController.INSTANCES.get(E2EController.INSTANCES.size() - 1);
+        String keptId = controller.kept.getId();
+        cdp.eval("document.getElementById('" + keptId + "').remove()");
+        long before = ((Number) cdp.eval("hanji.__stats().created")).longValue();
+        onUi(() -> {
+            window.release(keptId, controller.kept.generation()); // what the Cleaner does after GC
+            return null;
+        });
+        cdp.waitFor("hanji.__stats().created === " + (before - 1));
+    }
+
+    @Test
+    @Order(20)
     void programmaticWindowWithComponents() throws Exception {
         Label[] status = new Label[1];
         Window second = onUi(() -> {
@@ -360,7 +432,7 @@ class BrowserE2ETest {
     }
 
     @Test
-    @Order(12)
+    @Order(30)
     void noUnexpectedErrors() {
         assertEquals(List.of(), new ArrayList<>(TestApp.ERRORS));
     }

@@ -2,7 +2,10 @@ package io.hanji.examples.monitor;
 
 import io.hanji.Hanji;
 import io.hanji.HanjiApplication;
+import io.hanji.Tray;
 import io.hanji.Window;
+import io.hanji.menu.Menu;
+import io.hanji.menu.MenuItem;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -22,6 +25,15 @@ public class MonitorApp extends HanjiApplication {
                 .load("monitor/index.html", new MonitorController())
                 .show();
 
+        Tray tray = Tray.create()
+                .setTooltip("JVM Monitor")
+                .setOnAction(window::toFront)
+                .setMenu(new Menu(null,
+                        new MenuItem("창 보기", window::toFront),
+                        new MenuItem("GC 실행", System::gc),
+                        MenuItem.separator(),
+                        new MenuItem("종료", Hanji::exit)));
+
         sampler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "jvm-sampler");
             t.setDaemon(true);
@@ -33,6 +45,7 @@ public class MonitorApp extends HanjiApplication {
                 if (window.isPageReady()) {
                     window.publish("sample", sample);
                 }
+                tray.setTooltip(String.format("JVM Monitor - heap %.0f MB", sample.heapUsed() / 1048576.0));
             });
         }, 0, 1, TimeUnit.SECONDS);
     }

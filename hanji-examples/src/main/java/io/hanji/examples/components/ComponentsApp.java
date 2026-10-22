@@ -108,6 +108,20 @@ public class ComponentsApp extends HanjiApplication {
                 status);
         root.setGap(12);
 
+        // ask before closing when the list was changed (needs a host with native controls, e.g. electron)
+        boolean[] dirty = {false};
+        table.getItems().addListener(list -> dirty[0] = true);
+        window.setOnCloseRequest(request -> {
+            if (dirty[0]) {
+                request.cancel();
+                window.confirm("닫기", "변경한 직원 목록이 저장되지 않았습니다. 닫을까요?").thenAccept(ok -> {
+                    if (ok) {
+                        window.close();
+                    }
+                });
+            }
+        });
+
         window.setTitle("Hanji Components").setSize(980, 640).setContent(root).show();
         name.focus();
     }

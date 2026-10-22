@@ -3,6 +3,8 @@ package io.hanji;
 import java.util.ArrayDeque;
 import java.util.Objects;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 /**
@@ -64,6 +66,51 @@ final class EventLoop {
         }
         if (interrupted) {
             Thread.currentThread().interrupt();
+        }
+    }
+
+    private static final int MAX_NESTING = 32;
+    private int nesting;
+
+    /**
+     * Nested event loop: runs queued UI tasks until {@code done} holds or the timeout expires, so that a
+     * synchronous call on the UI thread can wait for an answer from the page without blocking the UI.
+     *
+     * @return whether {@code done} holds
+     */
+    boolean pumpUntil(BooleanSupplier done, long timeoutMillis) {
+        if (!isLoopThread()) {
+            throw new IllegalStateException("pumpUntil must be called on the UI thread");
+        }
+        if (nesting >= MAX_NESTING) {
+            throw new IllegalStateException("Too many nested synchronous calls");
+        }
+        nesting++;
+        try {
+            execute(afterTask); // send what the current task produced (including the request being waited for)
+            long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+            while (running && !done.getAsBoolean()) {
+                long remaining = deadline - System.nanoTime();
+                if (remaining <= 0) {
+                    break;
+                }
+                Runnable task = queue.poll(remaining, TimeUnit.NANOSECONDS);
+                if (task == null) {
+                    continue;
+                }
+                execute(task);
+                int guard = 0;
+                while (!deferred.isEmpty() && guard++ < MAX_DEFERRED_PER_TASK) {
+                    execute(deferred.poll());
+                }
+                execute(afterTask);
+            }
+            return done.getAsBoolean();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return done.getAsBoolean();
+        } finally {
+            nesting--;
         }
     }
 

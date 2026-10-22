@@ -24,13 +24,28 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: maven
 
-      # Google Chrome is preinstalled on all GitHub-hosted runners; the E2E tests find it automatically.
-      - name: Build and test (Linux, virtual display for the app-window test)
+      - name: Cache Electron runtime
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/hanji-cache
+          key: electron-44.9.3-${{ runner.os }}-${{ runner.arch }}
+
+      # Window managers handle maximize/minimize on X11; Xvfb has none
+      - name: Install a window manager (Linux)
         if: runner.os == 'Linux'
-        run: xvfb-run -a mvn -B -ntp install
+        run: sudo apt-get update -q && sudo apt-get install -y -q openbox
+
+      # Google Chrome is preinstalled on all GitHub-hosted runners; the E2E tests find it automatically.
+      - name: Build and test (Linux, virtual display for the window tests)
+        if: runner.os == 'Linux'
+        env:
+          HANJI_CACHE: ${{ runner.temp }}/hanji-cache   # downloaded Electron runtime (cached above)
+        run: xvfb-run -a bash -c 'openbox & sleep 1; mvn -B -ntp install'
 
       - name: Build and test
         if: runner.os != 'Linux'
+        env:
+          HANJI_CACHE: ${{ runner.temp }}/hanji-cache
         run: mvn -B -ntp install
 
       - name: Test summary

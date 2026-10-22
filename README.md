@@ -3,23 +3,21 @@
 **HTML/CSS로 화면을 만들고 Java로 제어하는 데스크톱 UI 프레임워크.**
 Swing·JavaFX처럼 `Application → Window → 컴포넌트/이벤트` 모델을 그대로 쓰되, 화면은 HTML로 그립니다.
 
-- **JavaFX·Swing·AWT 의존성 없음**: 코어는 JDK의 `java.base` + `jdk.httpserver` 모듈만 사용합니다(`jdeps`로 확인). 외부 라이브러리도 쓰지 않습니다.
+- **설치된 브라우저가 필요 없습니다.** VS Code·Discord처럼 Electron(Chromium 엔진)을 앱이 직접 가지고 실행합니다. Electron은 처음 실행할 때 한 번 내려받아 캐시하거나(SHA-256 검증), 앱과 함께 배포합니다.
+- **네이티브 창 기능**: 실행 중 크기·위치 변경, 최소화·최대화·전체 화면, 메뉴바(macOS 상단 메뉴 포함), 시스템 트레이, 닫기 확인.
+- **JavaFX·Swing·AWT 의존성 없음**: 코어는 JDK 모듈 `java.base`, `jdk.httpserver`, `java.net.http`(Electron 다운로드용)만 사용하고, 외부 라이브러리를 쓰지 않습니다(`jdeps`로 확인).
 - **Java 17+**: Java 21 이상에서는 백그라운드 작업에 가상 스레드를 사용합니다.
-- 창은 설치된 **Chrome/Edge의 앱 모드**(`--app`, 탭과 주소창이 없는 네이티브 창)로 띄웁니다. Windows 10/11에는 Edge가 기본으로 있습니다.
-- **Windows · macOS · Linux** 지원. 네이티브 코드가 없어 같은 JAR가 모든 OS에서 그대로 동작합니다.
+- **Windows · macOS · Linux** 지원. 같은 JAR가 모든 OS에서 동작하며, OS별로 필요한 것은 Electron 실행 파일뿐입니다.
 
 ## 지원 OS
 
-| OS | 창 표시 방식 | 브라우저 자동 탐색 위치 | 검증 방법 |
+| OS | 기본 창 | 대안(개발·경량) | 검증 |
 |---|---|---|---|
-| **Linux** (X11 / Wayland) | Chrome·Edge·Chromium·Brave·Vivaldi 앱 모드 → 없으면 `$BROWSER` 또는 `xdg-open`으로 기본 브라우저 탭 | `PATH` → `/usr/bin`, `/usr/local/bin`, `/opt/google/chrome`, `/opt/microsoft/msedge`, Snap(`/snap/bin/chromium`), Flatpak(`/var/lib/flatpak/exports/bin`, `~/.local/share/flatpak/exports/bin`) | Ubuntu 24.04에서 root·일반 사용자로 실제 창 실행 확인 + CI |
-| **macOS** (Intel / Apple Silicon) | Chrome·Edge·Chromium·Brave 앱 모드 → 없으면 `open`으로 Safari 탭 | `/Applications`, `~/Applications`의 `.app` 번들 | GitHub Actions macOS 러너 CI(`ci.yml`) |
-| **Windows** 10/11 | Edge(기본 탑재)·Chrome 앱 모드 | `Program Files`, `Program Files (x86)`, `%LOCALAPPDATA%` | GitHub Actions Windows 러너 CI(`ci.yml`) |
+| **Linux** (X11 / Wayland) | Electron | 설치된 Chrome·Edge·Chromium 앱 모드, 기본 브라우저 탭 | Ubuntu 24.04에서 실제 창 실행 + CI |
+| **macOS** (Intel / Apple Silicon) | Electron | Chrome·Edge 앱 모드, Safari 탭 | GitHub Actions macOS 러너 CI |
+| **Windows** 10/11 | Electron | Edge(기본 탑재)·Chrome 앱 모드 | GitHub Actions Windows 러너 CI |
 
-OS별 동작 차이:
-- **macOS**: macOS 앱은 마지막 창을 닫아도 프로세스가 Dock에 남습니다. Hanji는 페이지 연결 끊김으로 창 닫힘을 감지하고(기본 2.5초, `hanji.closeGrace`) 해당 브라우저 프로세스를 직접 종료합니다. Cmd+Q로 종료하면 즉시 감지합니다. Cmd+R 새로고침은 Ctrl+R과 같이 막혀 있습니다.
-- **Linux**: root로 실행하면 Chromium 정책상 `--no-sandbox`가 자동으로 붙습니다. 일반 사용자는 브라우저 샌드박스를 그대로 사용합니다. 디스플레이(`DISPLAY` 또는 `WAYLAND_DISPLAY`)가 없으면 `external` 호스트로 전환해 URL만 출력합니다.
-- 브라우저가 특이한 위치에 있으면 `-Dhanji.browser=/경로/브라우저` 또는 환경변수 `HANJI_BROWSER`로 지정합니다.
+CI(`.github/workflows/ci.yml`)는 세 OS에서 Java 17·21로 실제 Electron 창과 Chrome 창을 띄워 E2E 테스트를 실행합니다.
 
 ## 프로그래밍 모델 3가지
 
@@ -61,7 +59,7 @@ public class HelloApp extends HanjiApplication {
 
         @UiHandler("greet")                     // id="greet" 의 click
         void greet() {
-            message.setText("안녕하세요, " + name.getValue() + "님");   // 입력값은 동기 조회 가능
+            message.setText("안녕하세요, " + name.getValue() + "님");   // 입력값은 왕복 없이 바로 읽힘
         }
     }
 
@@ -108,9 +106,43 @@ hanji.on('progress', p => bar.style.width = p.pct + '%');   // Java: window.publ
 Java에서 페이지 쪽 코드를 호출할 수도 있습니다.
 ```java
 window.call("charts.update", data);                         // 전역 JS 함수 호출
-window.eval("document.title").thenAccept(t -> ...);         // 결과는 CompletableFuture
-element.eval("el.getBoundingClientRect().width");           // el = 해당 요소
+window.eval("document.title").thenAccept(t -> ...);         // 비동기
+String text = element.getText();                            // 동기 조회 (아래 "동기 조회" 참고)
 ```
+
+## 네이티브 창 기능 (Electron 호스트)
+
+```java
+window.setSize(900, 600).setPosition(100, 80).setMinimumSize(640, 400);   // show() 전후 모두 가능
+window.maximize();  window.minimize();  window.restore();  window.setFullScreen(true);
+window.setAlwaysOnTop(true);  window.toFront();  window.center();
+
+window.boundsProperty().addListener((o, old, b) -> saveLayout(b));   // 위치·크기 변경 감지
+window.stateProperty();   window.focusedProperty();                  // 상태·포커스(바인딩 가능)
+
+// 메뉴바: macOS에서는 상단 메뉴바가 되고, 앱 메뉴와 표준 편집 메뉴가 자동으로 붙어 Cmd+C/V/Q가 동작합니다
+window.setMenuBar(new MenuBar(
+        new Menu("파일",
+                new MenuItem("새 파일", "CmdOrCtrl+N", this::newFile),
+                MenuItem.checkbox("자동 저장", true, on -> autoSave = on),
+                MenuItem.separator(),
+                MenuItem.role(MenuRole.QUIT, "종료")),
+        Menu.standard(MenuRole.EDIT_MENU, "편집")));
+saveItem.setEnabled(false);   // 나중에 바꿔도 메뉴에 자동 반영
+
+// 닫기 확인: 저장하지 않은 변경이 있으면 묻기
+window.setOnCloseRequest(request -> {
+    if (dirty) {
+        request.cancel();
+        window.confirm("저장하지 않고 닫을까요?").thenAccept(ok -> { if (ok) window.close(); });
+    }
+});
+
+// 시스템 트레이
+Tray.create().setTooltip("내 앱").setOnAction(window::toFront)
+        .setMenu(new Menu(null, new MenuItem("열기", window::toFront), new MenuItem("종료", Hanji::exit)));
+```
+Electron이 아닌 호스트(개발용 Chrome 앱 모드 등)에서는 이 호출들을 경고 한 번만 남기고 무시하므로, 같은 코드가 그대로 동작합니다. `window.hasNativeControls()`, `tray.isSupported()`로 지원 여부를 확인할 수 있습니다.
 
 ## 핵심 API
 
@@ -118,19 +150,26 @@ element.eval("el.getBoundingClientRect().width");           // el = 해당 요�
 | 메서드 | 설명 |
 |---|---|
 | `load(path, controller \| factory)` / `loadHtml(html)` / `setContent(node)` | 페이지 지정 |
-| `show()` / `close()` / `onClosed(r)` / `onReady(r)` | 생명주기 |
+| `show()` / `close()` / `onClosed(r)` / `onReady(r)` / `setOnCloseRequest(h)` | 생명주기 |
+| `setSize` / `setPosition` / `setBounds` / `maximize` / `minimize` / `restore` / `setFullScreen` / `toFront` | 창 제어 |
+| `setMenuBar(menuBar)` / `boundsProperty()` / `stateProperty()` / `focusedProperty()` | 메뉴·상태 |
 | `byId(id)` / `body()` / `document()` / `global()` / `query(selector)` | 요소 조회 |
 | `alert` / `confirm` / `prompt` | HTML `<dialog>` 기반 비동기 대화상자(`CompletableFuture`) |
-| `eval` / `call` / `publish` / `onMessage` / `expose` | JS 연동 |
+| `eval` / `evalSync` / `call` / `publish` / `onMessage` / `expose` | JS 연동 |
 
 ### Element (DOM 프록시)
 `setText`, `setHtml`, `setValue/getValue`, `setChecked/isChecked`, `setAttribute`, `addClass/removeClass/toggleClass`,
 `setStyle`, `setVisible`, `setEnabled`, `append/prepend/insertBefore/remove/clear/dispose`, `focus/click/invoke`,
-`on(type, [EventOptions], handler)`, `bindText/bindValue/bindChecked/bindVisible/bindEnabled/bindClass/bindAttribute`.
+`on(type, [EventOptions], handler)`, `bindText/bindValue/bindChecked/bindVisible/bindEnabled/bindClass/bindAttribute`,
+동기 조회 `getText/getHtml/getAttribute/getProperty/evalSync`.
 
 - `Element.create("div")`로 만든 요소는 창에 붙기 전까지 명령을 기록해 두었다가, 붙는 순간 순서대로 재생합니다. 그래서 Swing처럼 트리를 먼저 조립할 수 있습니다.
-- 페이지의 `input/select/textarea` 값(`id`가 있는 요소)은 Java로 자동 미러링되므로 `getValue()`는 왕복 통신 없이 즉시 반환됩니다. 그 밖의 DOM 값은 `eval`로 비동기 조회합니다.
+- 페이지의 `input/select/textarea` 값(`id`가 있는 요소)은 Java로 자동 미러링되므로 `getValue()`·`isChecked()`는 왕복 없이 바로 읽힙니다.
+- Java가 참조하고 있는 요소는 부모의 `clear()`나 `setHtml()` 뒤에도 페이지에 보존되어 다시 `append`할 수 있습니다. Java 쪽 참조가 사라지면(GC) 페이지에서도 정리됩니다.
 - `EventOptions`: `preventDefault()`, `stopPropagation()`, `debounce(ms)`, `delegate(".row")`, `keys("Enter")`.
+
+### 동기 조회
+`getText()`, `getAttribute()`, `evalSync()` 같은 동기 조회는 페이지까지 다녀옵니다. UI 스레드에서 호출하면 응답을 기다리는 동안 다른 UI 작업(이벤트, 응답 수신)을 계속 처리하는 **중첩 이벤트 루프**로 대기하므로 교착 상태가 생기지 않습니다(Swing 모달 대화상자와 같은 원리). 다른 스레드에서 호출하면 그 스레드만 기다립니다. 시간 제한은 `HanjiConfig.setSyncTimeoutMillis`(기본 10초)입니다.
 
 ### 어노테이션
 | 어노테이션 | 대상 | 설명 |
@@ -139,7 +178,7 @@ element.eval("el.getBoundingClientRect().width");           // el = 해당 요�
 | `@UiHandler(value = {"id"}, event = "click", debounce, delegate, keys, preventDefault)` | 메서드 `()` 또는 `(Event)` | 이벤트 핸들러. `#document`, `#window`, `#body`도 지정 가능 |
 | `@JsCallable(value = "name", background = false)` | 메서드 | `hanji.call(name, ...)`로 호출 가능 |
 
-컨트롤러에 `initialize()` 또는 `initialize(Window)` 메서드가 있으면 주입 후 호출합니다(JavaFX와 동일한 규칙).
+컨트롤러에 `initialize()` 또는 `initialize(Window)` 메서드가 있으면 주입 후 호출합니다(JavaFX와 같은 규칙).
 
 ### 컴포넌트 (`io.hanji.ui`)
 `Label`, `Button`, `TextField`, `PasswordField`, `TextArea`, `CheckBox`, `ComboBox<T>`, `ListView<T>`, `TableView<T>`(헤더 클릭 정렬, 행 선택), `VBox`, `HBox`, `Panel`.
@@ -148,34 +187,51 @@ element.eval("el.getBoundingClientRect().width");           // el = 해당 요�
 ### 스레드 모델
 - 모든 UI 코드는 **단일 UI 스레드(`Hanji-UI`)**에서 실행됩니다(Swing EDT, JavaFX Application Thread와 같은 개념). 다른 스레드에서 UI를 건드리면 `IllegalStateException`이 발생합니다.
 - 다른 스레드에서 UI를 갱신할 때는 `Hanji.runLater(...)`를 사용합니다.
-- `Hanji.async(() -> 느린작업()).thenAccept(r -> ui갱신(r))` 형태로 쓰면 작업은 워커 스레드에서, 후속 처리는 UI 스레드에서 실행됩니다.
+- `Hanji.async(() -> 느린작업()).thenAccept(r -> ui갱신(r))`처럼 쓰면 작업은 워커 스레드에서, 후속 처리는 UI 스레드에서 실행됩니다.
 - 한 번의 UI 작업에서 발생한 DOM 변경은 작업이 끝날 때 **한 묶음으로** 페이지에 전송됩니다.
 
 ## 동작 구조
 
 ```
- Java (UI 스레드)                         127.0.0.1 내장 HTTP 서버                   창 (Chrome/Edge --app)
- ────────────────                         ─────────────────────────                  ──────────────────────
- Element.setText(...) ─┐
- Element.on(...)       ├─ 작업 종료 시 배치 ──▶ /{token}/__hanji/events (SSE) ──────▶ hanji.js 가 DOM에 적용
- window.publish(...)  ─┘                                                              │
-                                                                                      │ 이벤트, 입력값, hanji.call
- 핸들러 실행 ◀──────── UI 스레드로 전달 ◀─── /{token}/__hanji/send (POST, 순서 보장) ◀─┘
+ Java 프로세스                                                 Electron 프로세스 (앱당 1개, 창 여러 개)
+ ─────────────────────────────                                 ──────────────────────────────────────────
+ Window / Element / 메뉴 / 트레이                                main.js : 네이티브 창·메뉴·트레이
+   │  창 제어 명령·이벤트  ◀──── TCP 127.0.0.1 (토큰 인증) ────▶     │
+   │                                                               │ IPC (preload.js, contextIsolation)
+ 내장 HTTP 서버 (127.0.0.1)                                       페이지 (hanji.js)
+   ├ /{token}/page.html, css, js  ◀──── 페이지·자원 로드 ────────    │
+   └ /{token}/__hanji/events·send ◀──── main.js가 대신 연결 ──── 페이지 ↔ main.js 는 IPC
 ```
-- 창마다 추측할 수 없는 토큰이 URL에 들어가고, 서버는 루프백(127.0.0.1)에만 바인딩됩니다.
-- HTML 응답에는 클라이언트 런타임(`hanji.js`, `hanji.css`)이 `<head>` 맨 앞에 자동 삽입되므로, 페이지 스크립트에서 곧바로 `hanji`를 쓸 수 있습니다.
-- SSE는 `Last-Event-ID`로 끊긴 지점부터 재전송하고, 페이지→Java 메시지는 한 번에 하나씩 순서대로 보내며 재시도 시 중복을 제거합니다.
-- 창 닫힘은 브라우저 프로세스 종료와 페이지 연결 끊김으로 감지합니다. 마지막 창이 닫히면 앱이 종료됩니다(`setImplicitExit(false)`로 끌 수 있음).
+- 창마다 추측할 수 없는 토큰이 URL에 들어가고, 서버와 제어 소켓은 루프백(127.0.0.1)에만 바인딩됩니다.
+- 페이지 통신을 Electron 메인 프로세스가 대신 처리하므로, 창이 몇 개든 브라우저의 "호스트당 연결 6개" 제한을 받지 않습니다.
+- 앱 밖 URL로 이동하거나 새 창을 열면 시스템 기본 브라우저로 엽니다.
+- Java 프로세스가 끝나면 제어 소켓이 끊기고 Electron도 함께 종료되므로 고아 프로세스가 남지 않습니다.
+- HTML 응답에는 클라이언트 런타임(`hanji.js`, `hanji.css`)이 `<head>` 맨 앞에 자동 삽입됩니다.
 
 ## 창 호스트
 
 | `hanji.host` | 동작 | 자동 선택 순위 |
 |---|---|---|
-| `app` | Chrome/Edge/Chromium/Brave를 `--app=URL`로 실행해 탭 없는 네이티브 창으로 표시. 창마다 별도 프로세스와 임시 프로필을 사용 | 1 |
-| `browser` | 기본 브라우저의 탭으로 열기(OS 명령 `xdg-open`/`open`/`rundll32` 사용) | 2 |
-| `external` | 창을 열지 않고 URL만 출력(서버·CI·원격 디버깅용). 디스플레이가 없으면 자동 선택 | 3 |
+| `electron` | 내장 Electron으로 창 표시. 네이티브 창 기능 전부 지원 | 1 (디스플레이가 있으면 기본) |
+| `app` | 설치된 Chrome·Edge·Chromium·Brave를 `--app=URL`로 실행. 다운로드 없이 빠르게 확인할 때 | 2 |
+| `browser` | 기본 브라우저 탭으로 열기 | 3 |
+| `external` | 창을 열지 않고 URL만 출력(서버·CI·원격 디버깅용). 디스플레이가 없으면 자동 선택 | 4 |
 
-다른 렌더링 엔진(예: OS 내장 WebView를 JNI/FFM으로 연결)이 필요하면 `io.hanji.spi.WindowHostProvider`를 구현하고 `META-INF/services`에 등록하면 됩니다.
+Electron을 받을 수 없으면(오프라인 등) 자동 모드는 다음 순위 호스트로 넘어갑니다.
+
+## Electron 런타임과 배포
+
+Electron(기본 44.9.3)을 찾는 순서는 다음과 같습니다.
+1. `-Dhanji.electron=경로`(또는 환경변수 `HANJI_ELECTRON`): 실행 파일이나 압축을 푼 Electron 폴더
+2. 캐시: `~/.cache/hanji`(Linux), `~/Library/Caches/hanji`(macOS), `%LOCALAPPDATA%\hanji\cache`(Windows)
+3. 다운로드: GitHub 공식 릴리스에서 받아 SHA-256을 검증한 뒤 캐시에 설치(`-Dhanji.electronDownload=false`로 끔)
+
+앱과 함께 배포하려면 미리 설치해 두고 경로를 지정합니다.
+```bash
+java -cp hanji-core.jar io.hanji.electron.ElectronRuntime install --dir build/electron
+# 실행 시: -Dhanji.electron=build/electron/44.9.3/<platform>  (예: linux-x64, darwin-arm64, win32-x64)
+```
+플랫폼별 크기(압축 기준)는 macOS 약 115MB, Linux 약 118MB, Windows 약 150MB입니다.
 
 ## 설정
 
@@ -183,36 +239,44 @@ element.eval("el.getBoundingClientRect().width");           // el = 해당 요�
 
 | 속성 | 기본값 | 설명 |
 |---|---|---|
-| `hanji.host` | `auto` | `app` / `browser` / `external` |
+| `hanji.host` | `auto` | `electron` / `app` / `browser` / `external` |
 | `hanji.webRoot` | `web` | 페이지를 찾는 클래스패스 폴더 |
-| `hanji.browser` (환경변수 `HANJI_BROWSER`) | 자동 탐색 | 앱 모드에 사용할 브라우저 실행 파일 |
-| `hanji.browserArgs` | | 브라우저 추가 인자(공백 구분). 예: `--remote-debugging-port=9222` |
-| `hanji.dev` | `false` | 개발 모드: `src/main/resources`에서 직접 읽어 빌드 없이 F5로 반영 |
+| `hanji.appName` | `Hanji` | 앱 이름(Electron 사용자 데이터 폴더, macOS 메뉴) |
+| `hanji.electron` (환경변수 `HANJI_ELECTRON`) | 자동 | Electron 실행 파일 또는 폴더 |
+| `hanji.electronVersion` | `44.9.3` | 내려받을 Electron 버전 |
+| `hanji.electronDownload` | `true` | Electron이 없을 때 내려받을지 여부 |
+| `hanji.electronArgs` | | Electron/Chromium 추가 인자(공백 구분) |
+| `hanji.cacheDir` (환경변수 `HANJI_CACHE`) | OS 캐시 폴더 | 내려받은 런타임 위치 |
+| `hanji.browser` (환경변수 `HANJI_BROWSER`) | 자동 탐색 | `app` 호스트가 쓸 브라우저 |
+| `hanji.browserArgs` | | 브라우저 추가 인자(공백 구분) |
+| `hanji.dev` | `false` | 개발 모드: `src/main/resources`에서 직접 읽어 빌드 없이 F5로 반영, F12 개발자 도구 |
 | `hanji.devResources` | `src/main/resources` | 개발 모드의 소스 폴더 |
 | `hanji.port` | `0`(임의) | 서버 포트. 고정하면 `localStorage`가 실행 간에 유지됨 |
-| `hanji.closeGrace` | `2500` | 페이지 연결이 끊긴 뒤 창이 닫힌 것으로 판단하기까지의 시간(ms) |
-| `hanji.debug` | `false` | 전송되는 명령 배치 등 상세 로그 출력 |
+| `hanji.closeGrace` | `2500` | 브라우저 기반 호스트에서 연결이 끊긴 뒤 창이 닫힌 것으로 판단하기까지의 시간(ms) |
+| `hanji.debug` | `false` | 명령 배치, Electron 로그 등 상세 출력 |
 
-개발 모드에서 `load(path, Controller::new)`처럼 팩토리를 넘기면, F5로 새로고침할 때마다 컨트롤러가 새로 만들어집니다(실행 중 화면 수정 반영). 개발 모드가 아닐 때는 F5/Ctrl+R이 막혀 있습니다.
+개발 모드에서 `load(path, Controller::new)`처럼 팩토리를 넘기면, F5로 새로고침할 때마다 컨트롤러가 새로 만들어집니다. 개발 모드가 아닐 때는 F5·Ctrl+R이 막혀 있습니다.
 
 ## 프로젝트 구성과 실행
 
 ```
 hanji/
 ├─ hanji-core/       프레임워크 (외부 의존성 없음)
-│  ├─ src/main/java/io/hanji/           Hanji, HanjiApplication, Window, Element, Event, 어노테이션, 브리지
-│  ├─ src/main/java/io/hanji/ui/        컴포넌트
-│  ├─ src/main/java/io/hanji/property/  Property, ObservableList, Bindings
-│  ├─ src/main/java/io/hanji/json/      JSON 파서/매퍼
-│  ├─ src/main/java/io/hanji/spi|host/  창 호스트 SPI와 구현
-│  └─ src/main/resources/io/hanji/client/  hanji.js, hanji.css
-└─ hanji-examples/   todo(HTML+컨트롤러), components(순수 Java), monitor(JS 차트 + Java 데이터)
+│  ├─ src/main/java/io/hanji/            Hanji, HanjiApplication, Window, Element, Tray, 어노테이션, 브리지
+│  ├─ src/main/java/io/hanji/ui/         컴포넌트
+│  ├─ src/main/java/io/hanji/menu/       MenuBar, Menu, MenuItem, MenuRole
+│  ├─ src/main/java/io/hanji/property/   Property, ObservableList, Bindings
+│  ├─ src/main/java/io/hanji/json/       JSON 파서/매퍼
+│  ├─ src/main/java/io/hanji/electron/   Electron 호스트와 런타임 설치기
+│  ├─ src/main/java/io/hanji/spi|host/   창 호스트 SPI와 브라우저 기반 호스트
+│  └─ src/main/resources/io/hanji/       client/(hanji.js, hanji.css), electron/app/(main.js, preload.js)
+└─ hanji-examples/   todo(HTML+컨트롤러, 메뉴바), components(순수 Java, 닫기 확인), monitor(JS 차트, 트레이)
 ```
 
 ```bash
-mvn install                                                    # 빌드 + 테스트
-mvn -pl hanji-examples exec:java -Dexample=todo                # 또는 components, monitor
-mvn -pl hanji-examples exec:java -Dexample=todo -Dhanji.dev=true -Dhanji.devResources=hanji-examples/src/main/resources
+mvn install                                              # 빌드 + 테스트
+mvn -pl hanji-examples exec:java -Dexample=todo          # 또는 components, monitor
+mvn -pl hanji-examples exec:java -Dexample=todo -Dhanji.host=app   # 설치된 Chrome/Edge로 빠르게
 ```
 
 다른 프로젝트에서 사용할 때:
@@ -227,25 +291,26 @@ JPMS(module-info)를 쓰는 경우 `requires io.hanji;`를 추가하고, 컨트�
 
 ## 테스트
 
-- 단위 테스트: JSON, 매퍼, Property/ObservableList, Element 명령 버퍼링, HTML 주입
-- E2E 테스트(`BrowserE2ETest`): 헤드리스 Chromium을 JDK WebSocket 기반 DevTools 프로토콜로 조작해 컨트롤러 주입, 이벤트, 입력값 미러링, 폼→record 변환, JS↔Java 호출, 다이얼로그, 새로고침 후 재초기화, 순수 Java 화면, 창 닫힘 감지를 검증합니다. Chromium 계열 브라우저가 없으면 건너뜁니다.
-- 앱 창 테스트(`AppHostE2ETest`): 실제 `app` 호스트로 현재 OS의 브라우저를 찾아 앱 창을 띄우고 조작한 뒤, 사용자가 창을 닫은 상황을 재현해 애플리케이션이 종료되는지 확인합니다. 디스플레이가 필요합니다(Linux CI는 `xvfb-run`).
+| 테스트 | 내용 |
+|---|---|
+| 단위 테스트 | JSON, 매퍼, Property/ObservableList, Element 명령 버퍼링, HTML 주입, 창 닫힘 판정, Electron 런타임 경로 해석 |
+| `BrowserE2ETest` | 헤드리스 Chromium을 DevTools 프로토콜로 조작: 컨트롤러 주입, 이벤트, 입력값 미러링, 폼→record, JS↔Java 호출, 다이얼로그, 새로고침, 동기 조회, `clear()` 후 재사용, 창 닫힘 감지 |
+| `AppHostE2ETest` | 설치된 Chrome/Edge 앱 모드 창 실행 → 조작 → 사용자가 닫음 → 앱 종료 |
+| `ElectronHostE2ETest` | Electron 창: IPC 통신, 실행 중 크기·위치, 최대화·최소화, 메뉴(체크·비활성), 트레이, 동시 창 8개, 닫기 확인 취소/수락, 마지막 창 닫으면 종료 |
 
 ```bash
-mvn install                                         # 브라우저 자동 탐색
-HANJI_BROWSER=/path/to/chrome mvn -pl hanji-core test
-xvfb-run -a mvn install                             # 화면 없는 Linux에서 앱 창 테스트까지 실행
+mvn install                                   # 브라우저·디스플레이가 없으면 E2E는 건너뜀
+HANJI_REQUIRE_E2E=1 mvn install               # 건너뛰지 않고 실패 처리(CI)
+xvfb-run -a bash -c 'openbox & mvn install'   # 화면 없는 Linux: 가상 디스플레이 + 창 관리자
 ```
-
-브라우저나 디스플레이가 없으면 E2E 테스트는 건너뜁니다. 환경변수 `HANJI_REQUIRE_E2E=1`을 주면 건너뛰지 않고 실패로 처리합니다(CI에서 사용).
-
-### CI
-`.github/workflows/ci.yml`이 **Ubuntu · macOS · Windows × Java 17 · 21** 조합으로 빌드와 전체 테스트를 실행합니다. GitHub 호스팅 러너에는 Google Chrome이 기본 설치돼 있어 별도 설정이 필요 없습니다. CI는 `HANJI_REQUIRE_E2E=1`로 실행하므로 E2E가 건너뛰어진 채 성공으로 끝나는 일이 없고, 테스트 클래스별 실행·건너뜀 개수는 실행 화면의 주석(annotation)으로 남습니다. Mac이 없어도 macOS 동작은 이 CI 결과로 확인할 수 있습니다.
+CI는 테스트 클래스별 실행·건너뜀 개수와 실패 메시지를 실행 화면의 주석(annotation)으로 남깁니다.
 
 ## 현재 제약 사항
 
-- 창 크기·위치는 `show()` 시점에만 적용됩니다. 실행 중 크기 변경, 최소화, 네이티브 메뉴, 시스템 트레이는 아직 지원하지 않습니다.
-- `app` 호스트를 쓰려면 Chromium 계열 브라우저가 필요합니다(Windows는 Edge 기본 탑재, macOS·Linux는 Chrome/Edge/Chromium 설치 필요). 없으면 기본 브라우저 탭(`browser`, macOS는 Safari)으로 대체되며, 이때는 주소창이 보이는 일반 탭입니다.
-- 폼 입력값 외의 DOM 값은 동기적으로 읽을 수 없습니다(`eval`은 비동기). UI 스레드에서 `future.join()`으로 기다리면 교착 상태가 되므로 `thenAccept`를 사용하세요.
-- `clear()`로 지운 자식 요소는 페이지에서 폐기됩니다. 다시 쓰려면 `remove()`로 떼어 두거나 새로 만드세요.
-- `browser` 호스트에서 탭을 6개 넘게 열면 브라우저의 호스트당 연결 수 제한에 걸릴 수 있습니다(`app` 호스트는 창마다 별도 프로세스라 해당 없음).
+- **네이티브 파일 열기·저장 대화상자**는 아직 없습니다. 지금은 HTML `<input type="file">`을 쓰거나 Java에서 경로를 받아야 합니다.
+- **macOS 배포 시 이름·아이콘**: 내려받은 Electron을 그대로 쓰면 Dock과 메뉴바에 "Electron" 이름과 아이콘이 보입니다. 앱 이름으로 바꾸려면 `Electron.app`의 이름·`Info.plist`·아이콘을 바꾸고 다시 서명해야 하며, 이 패키징 단계는 아직 자동화되지 않았습니다. 일반 배포에는 Apple 코드 서명·공증이 필요합니다(Java 앱도 같음).
+- **Linux 샌드박스**: Ubuntu 24.04처럼 사용자 네임스페이스를 제한한 배포판에서는 Electron 샌드박스를 쓸 수 없어 경고와 함께 샌드박스 없이 실행합니다. 정식 배포 패키지는 `chrome-sandbox`를 setuid root로 설치하거나 AppArmor 프로필을 함께 설치해야 합니다.
+- **Linux 트레이**: 상태 표시줄을 지원하지 않는 데스크톱(확장 없는 GNOME 등)에서는 트레이 아이콘이 보이지 않습니다.
+- **용량**: Electron 때문에 앱 배포 크기가 플랫폼별 115~150MB(압축) 늘어납니다. 용량이 중요하면 `app` 호스트(설치된 Chrome/Edge 사용)를 선택할 수 있습니다.
+- **`browser` 호스트**는 일반 브라우저 탭이라 창 제어가 안 되고, 탭을 6개 넘게 열면 브라우저의 호스트당 연결 제한에 걸릴 수 있습니다(개발·확인용).
+- **`localStorage`**: 기본 포트가 실행마다 바뀌어 저장 내용이 유지되지 않습니다. 유지하려면 `hanji.port`를 고정하세요.
