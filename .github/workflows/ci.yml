@@ -13,6 +13,8 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         java: [17, 21]
     runs-on: ${{ matrix.os }}
+    env:
+      HANJI_REQUIRE_E2E: "1"   # browser tests must run here, never be skipped
     steps:
       - uses: actions/checkout@v4
 
@@ -30,6 +32,17 @@ jobs:
       - name: Build and test
         if: runner.os != 'Linux'
         run: mvn -B -ntp install
+
+      - name: Test summary
+        if: always()
+        shell: bash
+        run: |
+          for f in */target/surefire-reports/TEST-*.xml; do
+            [ -f "$f" ] || continue
+            line=$(grep -o '<testsuite [^>]*>' "$f" | head -1)
+            attr() { echo "$line" | sed -nE "s/.* $1=\"([^\"]*)\".*/\1/p"; }
+            echo "::notice title=$(attr name)::tests=$(attr tests) failures=$(attr failures) errors=$(attr errors) skipped=$(attr skipped)"
+          done
 
       - name: Upload test reports
         if: failure()
