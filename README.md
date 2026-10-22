@@ -270,14 +270,31 @@ hanji/
 │  ├─ src/main/java/io/hanji/electron/   Electron 호스트와 런타임 설치기
 │  ├─ src/main/java/io/hanji/spi|host/   창 호스트 SPI와 브라우저 기반 호스트
 │  └─ src/main/resources/io/hanji/       client/(hanji.js, hanji.css), electron/app/(main.js, preload.js)
-└─ hanji-examples/   todo(HTML+컨트롤러, 메뉴바), components(순수 Java, 닫기 확인), monitor(JS 차트, 트레이)
+└─ hanji-examples/   todo(HTML+컨트롤러, 메뉴바), components(순수 Java, 닫기 확인), monitor(JS 차트, 트레이),
+                     showcase(여러 화면으로 구성된 주문 관리 앱 "Hanji Studio")
 ```
 
 ```bash
 mvn install                                              # 빌드 + 테스트
-mvn -pl hanji-examples exec:java -Dexample=todo          # 또는 components, monitor
+mvn -pl hanji-examples exec:java -Dexample=todo          # 또는 components, monitor, showcase
 mvn -pl hanji-examples exec:java -Dexample=todo -Dhanji.host=app   # 설치된 Chrome/Edge로 빠르게
 ```
+
+### 쇼케이스: Hanji Studio
+
+`mvn install`을 실행하면 `hanji-examples/target/hanji-showcase.jar`(Hanji 포함, 약 350KB)가 만들어집니다. Java 17 이상에서 `java -jar hanji-showcase.jar`로 실행합니다. 처음 실행할 때 Electron 런타임을 한 번 내려받습니다. `-Dhanji.host=app`을 붙이면 설치된 Chrome/Edge를 대신 사용합니다. 데모 계정은 `admin` / `hanji`입니다.
+
+| 기능 | 구현 |
+|---|---|
+| 로그인 | 입력 검증, 작업 스레드에서 인증(`Hanji.async`), 실패 시 흔들림 애니메이션, `window.load()`로 페이지 전환 |
+| 페이지 이동 | 사이드바, 네이티브 메뉴 `이동`(⌘/Ctrl+1~4), "전체 보기" 링크, 프로필 버튼. 창 제목도 함께 바뀜 |
+| 대시보드 | Java로 만든 KPI 카드와 SVG 스파크라인, `publish()` 데이터로 그리는 캔버스·도넛 차트, 기간 전환 |
+| 주문 | `TableView` 정렬·상태 탭(건수 표시)·검색, 더블클릭하면 주문 상세를 **별도 네이티브 창**으로 열기, CSV 내보내기 |
+| 모달 | 새 주문(`ComboBox`, 실시간 금액, 검증), 고객 상세(통계, 최근 주문), `window.confirm` 확인 대화상자 |
+| 창 사이 동기화 | 주문 창에서 배송·보류·환불을 처리하면 메인 창 표·배지가 갱신되고 토스트가 표시됨 |
+| 설정 | 항상 위·창 크기·전체 화면(네이티브), 테마(시스템/라이트/다크)와 강조색, 로그아웃 |
+
+`-Dshowcase.tour=<디렉터리>`를 주면 모든 화면을 자동으로 돌며 스크린샷을 저장합니다. macOS에서는 `screencapture`, 그 밖의 OS에서는 ImageMagick을 사용합니다. GitHub Actions의 `Showcase screenshots` 워크플로우가 이 방식으로 macOS 실제 화면을 `showcase-screenshots` 브랜치에 올립니다.
 
 다른 프로젝트에서 사용할 때:
 ```xml

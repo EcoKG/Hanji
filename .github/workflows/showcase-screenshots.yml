@@ -1,0 +1,72 @@
+name: Showcase screenshots
+
+# Runs the showcase jar on a real macOS desktop, lets it click through all screens (tour mode) and
+# publishes the screenshots to the "showcase-screenshots" branch (force-pushed, one commit).
+on:
+  workflow_dispatch:
+  push:
+    branches: [demo/showcase]
+    paths:
+      - 'hanji-core/**'
+      - 'hanji-examples/**'
+      - '.github/workflows/showcase-screenshots.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: showcase-screenshots
+  cancel-in-progress: true
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Cache Electron runtime
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/hanji-cache
+          key: electron-44.9.3-${{ runner.os }}-${{ runner.arch }}
+
+      - name: Build hanji-showcase.jar
+        run: mvn -B -ntp -DskipTests install
+
+      - name: Run the tour (screencapture)
+        env:
+          HANJI_CACHE: ${{ runner.temp }}/hanji-cache
+          SHOTS: ${{ runner.temp }}/shots
+        run: |
+          mkdir -p "$SHOTS"
+          {
+            sw_vers
+            uname -m
+            system_profiler SPDisplaysDataType | grep -E "Resolution|Display Type" || true
+            java -version 2>&1
+          } > "$SHOTS/environment.txt"
+          java -Dshowcase.tour="$SHOTS" -jar hanji-examples/target/hanji-showcase.jar 2>&1 | tee "$SHOTS/tour.log"
+          ls -la "$SHOTS"
+          test -f "$SHOTS/10-dashboard-dark.png"
+
+      - name: Publish to the showcase-screenshots branch
+        if: always()   # also publish the log when the tour failed
+        env:
+          SHOTS: ${{ runner.temp }}/shots
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch --orphan showcase-screenshots
+          shopt -s nullglob
+          cp "$SHOTS"/* .
+          git add ./*.png ./*.txt ./*.log
+          git commit -q -m "macOS showcase screenshots from ${GITHUB_SHA::7}" -m "$RUN_URL"
+          git push -f origin showcase-screenshots

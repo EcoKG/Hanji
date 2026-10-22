@@ -14,7 +14,7 @@
     <name>Hanji Examples</name>
 
     <properties>
-        <!-- mvn -pl hanji-examples exec:java -Dexample=todo|components|monitor -->
+        <!-- mvn -pl hanji-examples exec:java -Dexample=todo|components|monitor|showcase -->
         <example>todo</example>
     </properties>
 
@@ -37,6 +37,29 @@
                         <argument>${example}</argument>
                     </arguments>
                 </configuration>
+            </plugin>
+            <plugin>
+                <!-- target/hanji-showcase.jar: the showcase with Hanji inside, run with "java -jar" -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <outputFile>${project.build.directory}/hanji-showcase.jar</outputFile>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>io.hanji.examples.showcase.ShowcaseApp</mainClass>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
