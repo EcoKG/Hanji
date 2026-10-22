@@ -37,8 +37,13 @@ final class WindowChannel {
     private int epoch;
     private boolean closed;
     private int activeStreams;
-    private long lastConnectAt;
-    private long lastUnloadAt;
+    private long connections;
+    // Ordering of page lifecycle events (a counter, so events within the same millisecond stay ordered)
+    private long eventSeq;
+    private long lastConnectSeq;
+    private long lastUnloadSeq;
+    private long lastDocumentSeq;
+    private long lastDocumentAt;
 
     synchronized void push(String json) {
         if (closed) {
@@ -104,8 +109,17 @@ final class WindowChannel {
         }
     }
 
+    /**
+     * An HTML document of this window was requested. On a reload or navigation the browser requests the new
+     * document before it unloads the old page, so this marks a page that is loading rather than closed.
+     */
+    synchronized void markDocumentRequest() {
+        lastDocumentSeq = ++eventSeq;
+        lastDocumentAt = System.currentTimeMillis();
+    }
+
     synchronized void markUnload() {
-        lastUnloadAt = System.currentTimeMillis();
+        lastUnloadSeq = ++eventSeq;
     }
 
     synchronized void close() {
@@ -118,10 +132,15 @@ final class WindowChannel {
         if (closed) {
             return false;
         }
-        if (expecting && System.currentTimeMillis() - expectingSince < NAVIGATION_TIMEOUT_MILLIS) {
+        long now = System.currentTimeMillis();
+        if (expecting && now - expectingSince < NAVIGATION_TIMEOUT_MILLIS) {
             return true;
         }
-        return activeStreams > 0 && lastConnectAt >= lastUnloadAt;
+        // a document was requested after the last connection: a reload is still loading, however slowly
+        if (lastDocumentSeq > lastConnectSeq && now - lastDocumentAt < NAVIGATION_TIMEOUT_MILLIS) {
+            return true;
+        }
+        return activeStreams > 0 && lastConnectSeq > lastUnloadSeq;
     }
 
     /**
@@ -137,7 +156,8 @@ final class WindowChannel {
             long resume = parseLong(lastEventId);
             cursor = resume >= pageStartSeq - 1 ? resume : pageStartSeq - 1;
             activeStreams++;
-            lastConnectAt = System.currentTimeMillis();
+            connections++;
+            lastConnectSeq = ++eventSeq;
         }
         try {
             out.write("retry: 1000\n\n".getBytes(StandardCharsets.UTF_8));
@@ -186,6 +206,11 @@ final class WindowChannel {
                 activeStreams--;
             }
         }
+    }
+
+    /** Number of event streams opened so far (for tests). */
+    synchronized long connections() {
+        return connections;
     }
 
     private boolean hasAfter(long cursor) {

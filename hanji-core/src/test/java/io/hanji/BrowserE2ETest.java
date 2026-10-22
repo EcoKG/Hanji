@@ -38,7 +38,6 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * End-to-end test: runs a Hanji application with the {@code external} host and drives the pages with a
@@ -150,7 +149,7 @@ class BrowserE2ETest {
     void startAll() throws Exception {
         String env = System.getenv("HANJI_BROWSER");
         browser = ChromiumLocator.find(env);
-        assumeTrue(browser != null, "No Chromium-based browser found; set HANJI_BROWSER to run the E2E test");
+        E2E.require(browser != null, "No Chromium-based browser found; set HANJI_BROWSER to run the E2E test");
 
         TestApp.primary = new CompletableFuture<>();
         appThread = new Thread(() -> Hanji.launch(TestApp.class), "e2e-app");

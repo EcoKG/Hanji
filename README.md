@@ -237,8 +237,10 @@ HANJI_BROWSER=/path/to/chrome mvn -pl hanji-core test
 xvfb-run -a mvn install                             # 화면 없는 Linux에서 앱 창 테스트까지 실행
 ```
 
+브라우저나 디스플레이가 없으면 E2E 테스트는 건너뜁니다. 환경변수 `HANJI_REQUIRE_E2E=1`을 주면 건너뛰지 않고 실패로 처리합니다(CI에서 사용).
+
 ### CI
-`.github/workflows/ci.yml`이 **Ubuntu · macOS · Windows × Java 17 · 21** 조합으로 빌드와 전체 테스트를 실행합니다. GitHub 호스팅 러너에는 Google Chrome이 기본 설치돼 있어 별도 설정이 필요 없습니다. Mac이 없어도 macOS 동작은 이 CI 결과로 확인할 수 있습니다.
+`.github/workflows/ci.yml`이 **Ubuntu · macOS · Windows × Java 17 · 21** 조합으로 빌드와 전체 테스트를 실행합니다. GitHub 호스팅 러너에는 Google Chrome이 기본 설치돼 있어 별도 설정이 필요 없습니다. CI는 `HANJI_REQUIRE_E2E=1`로 실행하므로 E2E가 건너뛰어진 채 성공으로 끝나는 일이 없고, 테스트 클래스별 실행·건너뜀 개수는 실행 화면의 주석(annotation)으로 남습니다. Mac이 없어도 macOS 동작은 이 CI 결과로 확인할 수 있습니다.
 
 ## 현재 제약 사항
 

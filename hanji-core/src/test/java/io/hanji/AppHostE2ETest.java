@@ -16,7 +16,6 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Runs the real {@code app} host on the current OS: locates Chrome/Edge/Chromium, opens an app-mode window,
@@ -53,8 +52,8 @@ class AppHostE2ETest {
     @Test
     void opensAppWindowAndExitsWhenTheUserClosesIt() throws Exception {
         Path browser = ChromiumLocator.find(System.getenv("HANJI_BROWSER"));
-        assumeTrue(browser != null, "No Chromium-based browser found");
-        assumeTrue(Displays.hasDisplay(), "The app host needs a display (use xvfb-run on Linux)");
+        E2E.require(browser != null, "No Chromium-based browser found");
+        E2E.require(Displays.hasDisplay(), "The app host needs a display (use xvfb-run on Linux)");
         try (ServerSocket s = new ServerSocket(0)) {
             devToolsPort = s.getLocalPort();
         }
