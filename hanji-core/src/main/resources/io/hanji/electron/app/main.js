@@ -183,8 +183,9 @@ function closeWindow(id) {
 }
 
 function setState(w, state) {
+  w.hanjiStateRequest = (w.hanjiStateRequest || 0) + 1; // cancels a pending minimize retry
   switch (state) {
-    case 'MINIMIZED': w.minimize(); break;
+    case 'MINIMIZED': minimize(w); break;
     case 'MAXIMIZED': if (w.isMinimized()) w.restore(); w.maximize(); break;
     case 'FULLSCREEN': w.setFullScreen(true); break;
     case 'NORMAL':
@@ -200,6 +201,26 @@ function setState(w, state) {
       break;
     default: throw new Error('Unknown window state ' + state);
   }
+}
+
+// macOS drops minimize() while a zoom animation runs. Right after unmaximize the window already reports NORMAL
+// (the frame starts shrinking), so a minimize requested then is lost: repeat it until the window minimizes.
+function minimize(w) {
+  const request = w.hanjiStateRequest;
+  let minimized = false;
+  const onMinimize = () => { minimized = true; };
+  w.once('minimize', onMinimize);
+  let attempts = 0;
+  const attempt = () => {
+    if (w.isDestroyed()) return;
+    if (minimized || w.isMinimized() || w.hanjiStateRequest !== request || attempts++ >= 20) {
+      w.removeListener('minimize', onMinimize);
+      return;
+    }
+    w.minimize();
+    setTimeout(attempt, 250);
+  };
+  attempt();
 }
 
 function setProperty(w, prop, value) {

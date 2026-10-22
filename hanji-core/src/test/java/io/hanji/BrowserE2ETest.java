@@ -391,6 +391,22 @@ class BrowserE2ETest {
     }
 
     @Test
+    @Order(17)
+    void lateReloadNotificationKeepsTheReadyPage() throws Exception {
+        // The event stream thread may report a reload after the POST thread already delivered the new page's
+        // 'ready' (two HTTP threads race). That late notification must not reset the page that is now running.
+        String pid = String.valueOf(cdp.eval("hanji.pageId"));
+        onUi(() -> {
+            window.onPageReplaced(pid);
+            return null;
+        });
+        cdp.eval("(() => { const n = document.getElementById('name'); n.value = 'Late';"
+                + " n.dispatchEvent(new Event('input', {bubbles: true}));"
+                + " document.getElementById('greet').click(); })()");
+        cdp.waitFor("document.getElementById('out').textContent === 'Hello, Late'");
+    }
+
+    @Test
     @Order(20)
     void programmaticWindowWithComponents() throws Exception {
         Label[] status = new Label[1];
