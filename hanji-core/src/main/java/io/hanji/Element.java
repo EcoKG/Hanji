@@ -1,9 +1,11 @@
 package io.hanji;
 
+import io.hanji.json.Json;
 import io.hanji.json.JsonMapper;
 import io.hanji.property.ObservableValue;
 import io.hanji.property.Property;
 
+import java.lang.ref.Cleaner;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -33,6 +35,11 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public final class Element implements HasElement {
 
+    private static final Cleaner CLEANER = Cleaner.create(r -> {
+        Thread t = new Thread(r, "Hanji-Cleaner");
+        t.setDaemon(true);
+        return t;
+    });
     private static final AtomicLong ID_SEQUENCE = new AtomicLong();
     private static final AtomicLong ORDER_SEQUENCE = new AtomicLong();
     private static final AtomicLong LISTENER_SEQUENCE = new AtomicLong();
@@ -59,6 +66,7 @@ public final class Element implements HasElement {
     private boolean checkedSet;
 
     private List<Long> listenerIds;
+    private Cleaner.Cleanable cleanable;
 
     /** Proxy for an element that already exists in the window's page. */
     Element(Window window, String id) {
@@ -68,6 +76,7 @@ public final class Element implements HasElement {
         this.created = false;
         this.window = window;
         this.generation = window.generation();
+        track();
     }
 
     private Element(String namespace, String tag) {
@@ -289,6 +298,9 @@ public final class Element implements HasElement {
             }
         }
         disposed = true;
+        if (cleanable != null) {
+            cleanable.clean();
+        }
     }
 
     private void adopt(Element child) {
@@ -322,6 +334,7 @@ public final class Element implements HasElement {
         for (Element e : subtree) {
             e.window = w;
             e.generation = w.generation();
+            e.track();
         }
         for (Element e : subtree) {
             if (e.created) {
@@ -352,6 +365,33 @@ public final class Element implements HasElement {
             e.pending = null;
             e.pendingChildren = null;
             e.pendingListeners = null;
+        }
+    }
+
+    /**
+     * Keeps the page element reachable while this proxy is alive, so that elements removed by {@link #clear()}
+     * or {@link #setHtml} can be appended again. When the proxy is garbage collected the page may forget it.
+     */
+    private void track() {
+        window.retain(id, generation, created);
+        cleanable = CLEANER.register(this, new Release(window, id, generation));
+    }
+
+    /** Cleaner action; must not reference the Element. */
+    private static final class Release implements Runnable {
+        private final Window window;
+        private final String id;
+        private final int generation;
+
+        Release(Window window, String id, int generation) {
+            this.window = window;
+            this.id = id;
+            this.generation = generation;
+        }
+
+        @Override
+        public void run() {
+            window.releaseLater(id, generation);
         }
     }
 
@@ -405,6 +445,37 @@ public final class Element implements HasElement {
             return CompletableFuture.failedFuture(new IllegalStateException("Element #" + id + " is not attached to a window"));
         }
         return window.request(this, command("eval", "script", script));
+    }
+
+    /** Evaluates JavaScript with this element as {@code el} and waits for the result (see {@link Window#evalSync}). */
+    public Object evalSync(String script) {
+        if (window == null) {
+            throw new IllegalStateException("Element #" + id + " is not attached to a window");
+        }
+        return window.syncRequest(() -> eval(script));
+    }
+
+    /** Current {@code textContent} read from the page (a round trip; see {@link Window#evalSync}). */
+    public String getText() {
+        Object v = evalSync("el.textContent");
+        return v == null ? "" : String.valueOf(v);
+    }
+
+    /** Current {@code innerHTML} read from the page. */
+    public String getHtml() {
+        Object v = evalSync("el.innerHTML");
+        return v == null ? "" : String.valueOf(v);
+    }
+
+    /** Attribute value read from the page ({@code null} if absent). */
+    public String getAttribute(String name) {
+        Object v = evalSync("el.getAttribute(" + Json.stringify(name) + ")");
+        return v == null ? null : String.valueOf(v);
+    }
+
+    /** Any DOM property read from the page as a JSON value, e.g. {@code getProperty("offsetWidth")}. */
+    public Object getProperty(String name) {
+        return evalSync("el[" + Json.stringify(name) + "]");
     }
 
     // ------------------------------------------------------------------ events

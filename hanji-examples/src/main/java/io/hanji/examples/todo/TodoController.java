@@ -105,6 +105,7 @@ public class TodoController {
         query.set(e.getValue() == null ? "" : e.getValue().trim().toLowerCase(Locale.ROOT));
     }
 
+    /** Also used by the "파일" menu of {@link TodoApp}. */
     @UiHandler("clearDone")
     void clearDone() {
         long count = store.todos().stream().filter(Todo::isDone).count();

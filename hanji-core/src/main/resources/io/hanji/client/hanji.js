@@ -3,6 +3,8 @@
  *
  * Java -> page : Server-Sent Events (__hanji/events), each message is a batch of commands.
  * page -> Java : POST (__hanji/send), batches of messages sent strictly one at a time to keep order.
+ * Inside the Electron host both directions go through IPC (window.hanjiNative, see preload.js) and the
+ * Electron main process talks to Java, so pages hold no HTTP connections of their own.
  *
  * Public API (window.hanji):
  *   hanji.call(name, ...args)  -> Promise    call a Java function (@JsCallable / Window.expose)
@@ -24,7 +26,9 @@ var __hanjiEval = function (el, __script) { return eval(__script); };
   var dev = /[?&]dev=1/.test(src);
   var pageId = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
 
-  var created = new Map();    // id -> element created by Java (found even while not in the document)
+  var created = new Map();    // id -> element Java still references (found even while not in the document)
+  var held = new Set();       // ids of page elements Java references (kept when removed from the document)
+  var native = window.hanjiNative || null;
   var listeners = new Map();  // listener id -> { target, type, fn, capture, timer }
   var topics = new Map();     // topic -> [fn]
   var calls = new Map();      // call id -> { resolve, reject }
@@ -47,11 +51,22 @@ var __hanjiEval = function (el, __script) { return eval(__script); };
     return document.getElementById(id) || created.get(id) || null;
   }
 
-  // Drops Java-created descendants of `root` from the registry (their subtree is being discarded).
-  function forget(root) {
-    if (!root.querySelectorAll || created.size === 0) return;
+  // Before a subtree leaves the document: keep the elements Java still references reachable by id.
+  // They are released when Java no longer references them ('unref', sent when the Java proxy is collected).
+  function keepReferenced(root) {
+    if (!root.querySelectorAll || held.size === 0) return;
     var nodes = root.querySelectorAll('[id]');
-    for (var i = 0; i < nodes.length; i++) created.delete(nodes[i].id);
+    for (var i = 0; i < nodes.length; i++) {
+      if (held.has(nodes[i].id) && !created.has(nodes[i].id)) created.set(nodes[i].id, nodes[i]);
+    }
+  }
+
+  // Forgets a subtree entirely (explicit dispose).
+  function forget(root) {
+    if (root.querySelectorAll) {
+      var nodes = root.querySelectorAll('[id]');
+      for (var i = 0; i < nodes.length; i++) { created.delete(nodes[i].id); held.delete(nodes[i].id); }
+    }
   }
 
   function isField(el) {
@@ -96,14 +111,20 @@ var __hanjiEval = function (el, __script) { return eval(__script); };
     transmit(body, 0);
   }
 
-  function transmit(body, attempt) {
-    fetch(base + 'send', {
+  // Resolves with the HTTP status of the request (via IPC inside Electron).
+  function postBody(body) {
+    if (native) return native.send(base, body);
+    return fetch(base + 'send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: body,
       cache: 'no-store'
-    }).then(function (r) {
-      if (r.status >= 500) throw new Error('HTTP ' + r.status);
+    }).then(function (r) { return r.status; });
+  }
+
+  function transmit(body, attempt) {
+    postBody(body).then(function (status) {
+      if (status >= 500) throw new Error('HTTP ' + status);
       done();
     }).catch(function (err) {
       if (closing) return;
@@ -131,16 +152,23 @@ var __hanjiEval = function (el, __script) { return eval(__script); };
   // ------------------------------------------------------------------ Java -> page
 
   function connect() {
+    if (native) {
+      native.connect(base, pageId, function (id, data) { receive(id, data); });
+      return;
+    }
     eventSource = new EventSource(base + 'events?page=' + encodeURIComponent(pageId));
-    eventSource.onmessage = function (e) {
-      if (e.lastEventId) lastReceived = Number(e.lastEventId);
-      var cmds;
-      try { cmds = JSON.parse(e.data); } catch (err) { report(err); return; }
-      for (var i = 0; i < cmds.length; i++) {
-        try { apply(cmds[i]); } catch (err) { report(err, cmds[i]); }
-      }
-      scheduleAck();
-    };
+    eventSource.onmessage = function (e) { receive(e.lastEventId, e.data); };
+  }
+
+  function receive(id, data) {
+    if (closing) return;
+    if (id) lastReceived = Number(id);
+    var cmds;
+    try { cmds = JSON.parse(data); } catch (err) { report(err); return; }
+    for (var i = 0; i < cmds.length; i++) {
+      try { apply(cmds[i]); } catch (err) { report(err, cmds[i]); }
+    }
+    scheduleAck();
   }
 
   var needsTarget = { append: 1, prepend: 1, insert: 1, remove: 1, dispose: 1, clear: 1, set: 1, attr: 1,
@@ -176,20 +204,23 @@ var __hanjiEval = function (el, __script) { return eval(__script); };
     append: function (c, el) { el.appendChild(childOf(c)); },
     prepend: function (c, el) { el.insertBefore(childOf(c), el.firstChild); },
     insert: function (c, el) { var ref = find(c.ref); el.insertBefore(childOf(c), ref && ref.parentNode === el ? ref : null); },
-    remove: function (c, el) { if (el.parentNode) el.parentNode.removeChild(el); },
+    remove: function (c, el) { if (el.parentNode) el.parentNode.removeChild(el); if (held.has(c.id)) created.set(c.id, el); },
     dispose: function (c, el) {
       if (el.parentNode) el.parentNode.removeChild(el);
       forget(el);
       created.delete(c.id);
+      held.delete(c.id);
       listeners.forEach(function (l, lid) {
         if (l.target === el) { el.removeEventListener(l.type, l.fn, l.capture); listeners.delete(lid); }
       });
     },
-    clear: function (c, el) { forget(el); while (el.firstChild) el.removeChild(el.firstChild); },
+    clear: function (c, el) { keepReferenced(el); while (el.firstChild) el.removeChild(el.firstChild); },
     set: function (c, el) {
-      if (c.prop === 'textContent' || c.prop === 'innerHTML') forget(el);
+      if (c.prop === 'textContent' || c.prop === 'innerHTML') keepReferenced(el);
       el[c.prop] = c.value;
     },
+    ref: function (c) { held.add(c.id); },
+    unref: function (c) { held.delete(c.id); created.delete(c.id); },
     attr: function (c, el) {
       if (c.value === null || c.value === undefined) el.removeAttribute(c.name);
       else el.setAttribute(c.name, c.value);
@@ -397,8 +428,10 @@ var __hanjiEval = function (el, __script) { return eval(__script); };
   });
 
   window.addEventListener('pagehide', function () {
-    if (closing || !navigator.sendBeacon) return;
-    navigator.sendBeacon(base + 'send', JSON.stringify({ page: pageId, seq: -1, messages: [{ type: 'unload' }] }));
+    if (closing) return;
+    var body = JSON.stringify({ page: pageId, seq: -1, messages: [{ type: 'unload' }] });
+    if (native) native.send(base, body); // the main process outlives the page
+    else if (navigator.sendBeacon) navigator.sendBeacon(base + 'send', body);
   });
 
   // ------------------------------------------------------------------ dialogs
@@ -488,6 +521,10 @@ var __hanjiEval = function (el, __script) { return eval(__script); };
     },
     sync: function (elementOrId) {
       syncField(typeof elementOrId === 'string' ? find(elementOrId) : elementOrId);
+    },
+    // diagnostics (used by tests)
+    __stats: function () {
+      return { created: created.size, held: held.size, transport: native ? 'ipc' : 'http' };
     }
   };
 

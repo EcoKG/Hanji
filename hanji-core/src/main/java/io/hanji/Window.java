@@ -2,6 +2,11 @@ package io.hanji;
 
 import io.hanji.json.Json;
 import io.hanji.json.JsonMapper;
+import io.hanji.menu.MenuBar;
+import io.hanji.menu.MenuItem;
+import io.hanji.property.ObservableValue;
+import io.hanji.property.SimpleProperty;
+import io.hanji.spi.HostCallbacks;
 import io.hanji.spi.HostWindow;
 import io.hanji.spi.HostWindowSpec;
 
@@ -75,6 +80,19 @@ public final class Window {
     private final List<Runnable> readyHandlers = new CopyOnWriteArrayList<>();
     private final List<Runnable> closedHandlers = new CopyOnWriteArrayList<>();
 
+    private boolean resizable = true;
+    private boolean alwaysOnTop;
+    private int[] minimumSize;
+    private WindowState requestedState = WindowState.NORMAL;
+    private MenuBar menuBar;
+    private Map<String, MenuItem> menuIndex = new HashMap<>();
+    private boolean menuPushPending;
+    private Consumer<CloseRequest> closeRequestHandler;
+    private boolean nativeWarningShown;
+    private final SimpleProperty<Bounds> bounds = new SimpleProperty<>();
+    private final SimpleProperty<WindowState> windowState = new SimpleProperty<>(WindowState.NORMAL);
+    private final SimpleProperty<Boolean> focused = new SimpleProperty<>(false);
+
     /** Creates a new (hidden) window. Must be called on the UI thread of a running Hanji application. */
     public Window() {
         this.runtime = HanjiRuntime.get();
@@ -106,26 +124,316 @@ public final class Window {
         return this;
     }
 
-    /** Initial window size in CSS pixels (applied when the window is shown). */
+    // ================================================================== native window controls
+
+    /**
+     * Window size. Before {@link #show()} it is the initial size; afterwards the window is resized (hosts with
+     * native controls, i.e. the electron host; others ignore it with a warning).
+     */
     public Window setSize(int width, int height) {
         this.width = width;
         this.height = height;
+        HostWindow h = nativeControls("resize the window");
+        if (h != null) {
+            h.setBounds(null, null, width, height);
+        }
         return this;
     }
 
-    /** Initial screen position (applied when the window is shown). */
+    /** Screen position (initial before {@link #show()}, a move afterwards). */
     public Window setPosition(int x, int y) {
         this.x = x;
         this.y = y;
+        HostWindow h = nativeControls("move the window");
+        if (h != null) {
+            h.setBounds(x, y, null, null);
+        }
         return this;
     }
 
+    public Window setBounds(Bounds b) {
+        this.x = b.x();
+        this.y = b.y();
+        this.width = b.width();
+        this.height = b.height();
+        HostWindow h = nativeControls("move the window");
+        if (h != null) {
+            h.setBounds(b.x(), b.y(), b.width(), b.height());
+        }
+        return this;
+    }
+
+    /** Centers the window on its screen (before {@link #show()}: open it centered). */
+    public Window center() {
+        if (state == State.SHOWING) {
+            HostWindow h = nativeControls("center the window");
+            if (h != null) {
+                h.center();
+            }
+        } else {
+            this.x = null;
+            this.y = null;
+        }
+        return this;
+    }
+
+    public Window minimize() {
+        return setState(WindowState.MINIMIZED);
+    }
+
+    public Window maximize() {
+        return setState(WindowState.MAXIMIZED);
+    }
+
+    /** Back to {@link WindowState#NORMAL} from minimized, maximized or full screen. */
+    public Window restore() {
+        return setState(WindowState.NORMAL);
+    }
+
+    public Window setFullScreen(boolean fullScreen) {
+        return setState(fullScreen ? WindowState.FULLSCREEN : WindowState.NORMAL);
+    }
+
+    public Window setState(WindowState newState) {
+        requestedState = Objects.requireNonNull(newState);
+        HostWindow h = nativeControls("change the window state");
+        if (h != null) {
+            h.setState(newState);
+        }
+        return this;
+    }
+
+    /** Shows, restores and focuses the window. */
+    public Window toFront() {
+        HostWindow h = nativeControls("bring the window to front");
+        if (h != null) {
+            h.toFront();
+        }
+        return this;
+    }
+
+    public Window setResizable(boolean resizable) {
+        this.resizable = resizable;
+        HostWindow h = nativeControls("change resizability");
+        if (h != null) {
+            h.setResizable(resizable);
+        }
+        return this;
+    }
+
+    public Window setAlwaysOnTop(boolean alwaysOnTop) {
+        this.alwaysOnTop = alwaysOnTop;
+        HostWindow h = nativeControls("keep the window on top");
+        if (h != null) {
+            h.setAlwaysOnTop(alwaysOnTop);
+        }
+        return this;
+    }
+
+    public Window setMinimumSize(int width, int height) {
+        this.minimumSize = new int[]{width, height};
+        HostWindow h = nativeControls("set a minimum size");
+        if (h != null) {
+            h.setMinimumSize(width, height);
+        }
+        return this;
+    }
+
+    /** The native menu bar of this window ({@code null} removes it). Changes to the items are applied automatically. */
+    public Window setMenuBar(MenuBar bar) {
+        if (menuBar != null) {
+            menuBar.setChangeListener(null);
+        }
+        menuBar = bar;
+        if (bar != null) {
+            bar.setChangeListener(this::scheduleMenuPush);
+        }
+        scheduleMenuPush();
+        return this;
+    }
+
+    public MenuBar getMenuBar() {
+        return menuBar;
+    }
+
+    /**
+     * Called when the user tries to close the window (close button, Cmd+W, Alt+F4, quitting); cancel the request
+     * to keep the window open. {@link #close()} from code always closes.
+     */
+    public Window setOnCloseRequest(Consumer<CloseRequest> handler) {
+        closeRequestHandler = handler;
+        HostWindow h = nativeControls("intercept closing");
+        if (h != null) {
+            h.setCloseGuard(handler != null);
+        }
+        return this;
+    }
+
+    /** Position and size reported by the window (initial values until the window is shown). */
+    public ObservableValue<Bounds> boundsProperty() {
+        return bounds;
+    }
+
+    public ObservableValue<WindowState> stateProperty() {
+        return windowState;
+    }
+
+    public ObservableValue<Boolean> focusedProperty() {
+        return focused;
+    }
+
+    public Bounds getBounds() {
+        Bounds b = bounds.get();
+        return b != null ? b : new Bounds(x == null ? 0 : x, y == null ? 0 : y, width, height);
+    }
+
+    public int getX() {
+        return getBounds().x();
+    }
+
+    public int getY() {
+        return getBounds().y();
+    }
+
     public int getWidth() {
-        return width;
+        return getBounds().width();
     }
 
     public int getHeight() {
-        return height;
+        return getBounds().height();
+    }
+
+    public WindowState getState() {
+        return windowState.get();
+    }
+
+    public boolean isFocused() {
+        return Boolean.TRUE.equals(focused.get());
+    }
+
+    /** Whether the window host supports native controls (size, state, menus, close requests). */
+    public boolean hasNativeControls() {
+        return hostWindow != null && hostWindow.supportsNativeControls();
+    }
+
+    private HostWindow nativeControls(String what) {
+        runtime.checkUiThread();
+        if (state != State.SHOWING || hostWindow == null) {
+            return null;
+        }
+        if (hostWindow.supportsNativeControls()) {
+            return hostWindow;
+        }
+        warnNoNativeControls(what);
+        return null;
+    }
+
+    private void warnNoNativeControls(String what) {
+        if (!nativeWarningShown) {
+            nativeWarningShown = true;
+            Log.warn("The '" + runtime.host().name() + "' window host cannot " + what
+                    + " (window controls, menus and tray icons need the electron host)");
+        }
+    }
+
+    private void applyNativeSettings() {
+        boolean customized = !resizable || alwaysOnTop || minimumSize != null || menuBar != null
+                || closeRequestHandler != null || requestedState != WindowState.NORMAL;
+        if (!hostWindow.supportsNativeControls()) {
+            if (customized) {
+                warnNoNativeControls("apply the window settings");
+            }
+            return;
+        }
+        if (!resizable) {
+            hostWindow.setResizable(false);
+        }
+        if (alwaysOnTop) {
+            hostWindow.setAlwaysOnTop(true);
+        }
+        if (minimumSize != null) {
+            hostWindow.setMinimumSize(minimumSize[0], minimumSize[1]);
+        }
+        if (closeRequestHandler != null) {
+            hostWindow.setCloseGuard(true);
+        }
+        if (menuBar != null) {
+            pushMenu();
+        }
+        if (requestedState != WindowState.NORMAL) {
+            hostWindow.setState(requestedState);
+        }
+    }
+
+    private void scheduleMenuPush() {
+        if (state != State.SHOWING || menuPushPending) {
+            return;
+        }
+        menuPushPending = true;
+        runtime.loop.defer(this::pushMenu);
+    }
+
+    private void pushMenu() {
+        menuPushPending = false;
+        HostWindow h = nativeControls("show a menu bar");
+        if (h == null) {
+            return;
+        }
+        Map<String, MenuItem> index = new HashMap<>();
+        List<Map<String, Object>> template = menuBar == null ? List.of() : menuBar.toTemplate(index);
+        menuIndex = index;
+        h.setMenu(template);
+    }
+
+    private void handleCloseRequest() {
+        if (state != State.SHOWING) {
+            return;
+        }
+        CloseRequest request = new CloseRequest(this);
+        if (closeRequestHandler != null) {
+            try {
+                closeRequestHandler.accept(request);
+            } catch (Throwable t) {
+                runtime.reportError(t);
+            }
+        }
+        if (!request.isCancelled()) {
+            close();
+        }
+    }
+
+    private void dispatchMenu(String id, Boolean checked) {
+        MenuItem item = menuIndex.get(id);
+        if (item != null) {
+            item.fire(checked);
+        }
+    }
+
+    /** Receives host notifications (any thread) and forwards them to the UI thread. */
+    private final class Callbacks implements HostCallbacks {
+        @Override
+        public void closed() {
+            runtime.post(Window.this::closedByHost);
+        }
+
+        @Override
+        public void closeRequested() {
+            runtime.post(Window.this::handleCloseRequest);
+        }
+
+        @Override
+        public void geometryChanged(int gx, int gy, int gw, int gh, WindowState s, boolean f) {
+            runtime.post(() -> {
+                bounds.set(new Bounds(gx, gy, gw, gh));
+                windowState.set(s);
+                focused.set(f);
+            });
+        }
+
+        @Override
+        public void menuAction(String id, Boolean checked) {
+            runtime.post(() -> dispatchMenu(id, checked));
+        }
     }
 
     // ================================================================== pages
@@ -212,6 +520,7 @@ public final class Window {
         outgoing = new ArrayList<>();
         listeners.clear();
         pageFunctions.clear();
+        references.clear();
         activeController = null;
         failPendingRequests(new CancellationException("The page was replaced"));
     }
@@ -243,12 +552,12 @@ public final class Window {
         }
         state = State.SHOWING;
         try {
-            hostWindow = runtime.host().open(new HostWindowSpec(getUrl(), title, width, height, x, y),
-                    () -> runtime.post(this::closedByHost));
+            hostWindow = runtime.host().open(new HostWindowSpec(getUrl(), title, width, height, x, y), new Callbacks());
         } catch (Exception e) {
             state = State.NEW;
             throw new IllegalStateException("Could not open window: " + e.getMessage(), e);
         }
+        applyNativeSettings();
         return this;
     }
 
@@ -381,6 +690,57 @@ public final class Window {
 
     public <T> CompletableFuture<T> eval(String script, Class<T> resultType) {
         return eval(script).thenApply(v -> JsonMapper.fromJson(v, resultType));
+    }
+
+    /**
+     * Evaluates JavaScript and waits for the result. On the UI thread other UI work keeps running while waiting
+     * (a nested event loop, like a modal dialog), so this does not deadlock; from other threads it simply blocks.
+     *
+     * @throws JsException if the script fails or the page does not answer within
+     *                     {@link HanjiConfig#getSyncTimeoutMillis()}
+     */
+    public Object evalSync(String script) {
+        return syncRequest(() -> eval(script));
+    }
+
+    public <T> T evalSync(String script, Class<T> resultType) {
+        return JsonMapper.fromJson(evalSync(script), resultType);
+    }
+
+    /** Runs {@code request} on the UI thread and waits for its result (see {@link #evalSync(String)}). */
+    Object syncRequest(Supplier<CompletableFuture<Object>> request) {
+        long timeout = runtime.config.getSyncTimeoutMillis();
+        CompletableFuture<Object> future;
+        if (runtime.isUiThread()) {
+            future = request.get();
+            if (!runtime.loop.pumpUntil(future::isDone, timeout)) {
+                throw new JsException("No answer from the page within " + timeout + " ms");
+            }
+        } else {
+            CompletableFuture<Object> relay = new CompletableFuture<>();
+            runtime.post(() -> request.get().whenComplete((v, e) -> {
+                if (e != null) {
+                    relay.completeExceptionally(e);
+                } else {
+                    relay.complete(v);
+                }
+            }));
+            future = relay;
+        }
+        try {
+            return future.get(timeout, java.util.concurrent.TimeUnit.MILLISECONDS);
+        } catch (java.util.concurrent.ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException) {
+                throw (RuntimeException) cause;
+            }
+            throw new JsException(String.valueOf(cause));
+        } catch (java.util.concurrent.TimeoutException e) {
+            throw new JsException("No answer from the page within " + timeout + " ms");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new JsException("Interrupted while waiting for the page");
+        }
     }
 
     /** Calls a global JavaScript function (dotted paths allowed, e.g. {@code "charts.update"}). Fire and forget. */
@@ -547,6 +907,51 @@ public final class Window {
             this.id = id;
             this.element = element;
             this.handler = handler;
+        }
+    }
+
+    // Element references: page elements stay reachable while Java holds a proxy (see Element.track)
+    private final Map<String, Integer> references = new HashMap<>();
+
+    void retain(String id, int gen, boolean created) {
+        if (id.startsWith("#")) {
+            return;
+        }
+        if (!runtime.isUiThread()) {
+            runtime.post(() -> retain(id, gen, created));
+            return;
+        }
+        if (gen != generation) {
+            return;
+        }
+        int count = references.merge(id, 1, Integer::sum);
+        if (count == 1 && !created) {
+            outgoing.add(Cmd.of("ref", "id", id));
+        }
+    }
+
+    /** Called (via the UI thread) when a Java proxy of {@code id} was garbage collected or disposed. */
+    void release(String id, int gen) {
+        if (gen != generation || state == State.CLOSED) {
+            return;
+        }
+        Integer count = references.get(id);
+        if (count == null) {
+            return;
+        }
+        if (count <= 1) {
+            references.remove(id);
+            outgoing.add(Cmd.of("unref", "id", id));
+        } else {
+            references.put(id, count - 1);
+        }
+    }
+
+    void releaseLater(String id, int gen) {
+        try {
+            runtime.post(() -> release(id, gen));
+        } catch (RuntimeException ignored) {
+            // runtime gone
         }
     }
 

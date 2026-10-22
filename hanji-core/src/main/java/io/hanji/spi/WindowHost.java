@@ -12,6 +12,11 @@ public interface WindowHost {
     /** Opens a window for {@code spec.url()}. Called on the Hanji UI thread. */
     HostWindow open(HostWindowSpec spec, HostCallbacks callbacks) throws Exception;
 
+    /** Creates a system tray icon, or returns {@code null} when this host has no tray support. */
+    default HostTray createTray(HostTray.Callbacks callbacks) throws Exception {
+        return null;
+    }
+
     /** Releases all resources (called once when the application exits, possibly from a shutdown hook). */
     default void shutdown() {
     }
