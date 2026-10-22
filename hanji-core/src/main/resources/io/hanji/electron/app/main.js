@@ -250,8 +250,10 @@ function setWindowMenu(winId, menus) {
     m.role ? { role: m.role, label: m.label || undefined } : { label: m.label, submenu: buildItems(m.items, { win: winId }) }
   ));
   if (isMac) {
-    // macOS has one menu bar per application: keep the app menu, and Edit/Window so Cmd+C/V/W/M keep working
-    const full = [{ role: 'appMenu' }, ...template];
+    // macOS has one menu bar per application: keep the app menu, and Edit/Window so Cmd+C/V/W/M keep working.
+    // A first menu with about/hide/quit items is the application's own app menu (macOS shows it under the app name).
+    const ownAppMenu = menus && menus.length && !menus[0].role && hasRole(menus[0].items, ['about', 'hide', 'quit']);
+    const full = ownAppMenu ? [...template] : [{ role: 'appMenu' }, ...template];
     if (!hasRole(menus, ['editMenu', 'copy', 'paste'])) full.splice(1, 0, { role: 'editMenu' });
     if (!hasRole(menus, ['windowMenu'])) full.push({ role: 'windowMenu' });
     windowMenus.set(winId, Menu.buildFromTemplate(full));

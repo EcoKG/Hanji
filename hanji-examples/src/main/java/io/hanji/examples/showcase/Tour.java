@@ -12,6 +12,7 @@ import java.util.Locale;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Clicks through the showcase and takes screenshots ({@code -Dshowcase.tour=<dir>}). The screenshot commands can be
@@ -26,6 +27,7 @@ final class Tour implements Runnable {
     private final Path dir;
     private final String shot;
     private final String shotWindow;
+    private boolean firstShot = true;
 
     private Tour(Window window, Store store, Path dir) {
         this.window = window;
@@ -129,11 +131,40 @@ final class Tour implements Runnable {
     }
 
     private void shot(String name, Window target) throws Exception {
+        awaitRendered(target);
         Bounds b = call(target::getBounds);
         exec(shot, dir.resolve(name + ".png"), b);
         if (b != null && !shotWindow.isBlank()) {
             exec(shotWindow, dir.resolve(name + "-window.png"), b);
         }
+    }
+
+    /**
+     * Waits until the page is visible and produces animation frames, plus time for rasterization. On slow machines
+     * (CI virtual machines render in software) the first frames of a new window can take several seconds.
+     */
+    private void awaitRendered(Window target) throws Exception {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(20);
+        String script = "new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(document.visibilityState))))";
+        while (true) {
+            CompletableFuture<Object> frames = call(() -> target.eval(script));
+            try {
+                Object state = frames.get(3, TimeUnit.SECONDS);
+                if ("visible".equals(state)) {
+                    break;
+                }
+                log("page is " + state + ", waiting");
+            } catch (TimeoutException e) {
+                log("no animation frame yet, waiting");
+            }
+            if (System.nanoTime() > deadline) {
+                log("page did not render in time; taking the screenshot anyway");
+                break;
+            }
+            pause(500);
+        }
+        pause(firstShot ? 3000 : 600);
+        firstShot = false;
     }
 
     private void exec(String template, Path file, Bounds b) throws Exception {

@@ -27,7 +27,7 @@ public class ShowcaseApp extends HanjiApplication {
     public void start(Window window) {
         window.setTitle("Hanji Studio")
                 .setSize(1360, 860)
-                .setMinimumSize(1080, 680)
+                .setMinimumSize(960, 640)
                 .center()
                 .load("showcase/login.html", new LoginController(store))
                 .show();

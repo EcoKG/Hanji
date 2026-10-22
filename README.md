@@ -121,6 +121,7 @@ window.boundsProperty().addListener((o, old, b) -> saveLayout(b));   // 위치·
 window.stateProperty();   window.focusedProperty();                  // 상태·포커스(바인딩 가능)
 
 // 메뉴바: macOS에서는 상단 메뉴바가 되고, 앱 메뉴와 표준 편집 메뉴가 자동으로 붙어 Cmd+C/V/Q가 동작합니다
+// (첫 메뉴에 ABOUT·HIDE·QUIT 항목을 넣으면 그 메뉴가 앱 메뉴로 쓰입니다)
 window.setMenuBar(new MenuBar(
         new Menu("파일",
                 new MenuItem("새 파일", "CmdOrCtrl+N", this::newFile),

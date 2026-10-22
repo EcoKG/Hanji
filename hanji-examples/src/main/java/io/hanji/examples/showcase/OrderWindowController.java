@@ -5,6 +5,10 @@ import io.hanji.Event;
 import io.hanji.UiField;
 import io.hanji.UiHandler;
 import io.hanji.Window;
+import io.hanji.menu.Menu;
+import io.hanji.menu.MenuBar;
+import io.hanji.menu.MenuItem;
+import io.hanji.menu.MenuRole;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -39,6 +43,9 @@ public class OrderWindowController {
     private final Store store;
     private final Order order;
     private boolean confirming;
+    private final MenuItem shipItem = new MenuItem("배송 시작", "CmdOrCtrl+Shift+S", this::ship);
+    private final MenuItem holdItem = new MenuItem("보류", "CmdOrCtrl+Shift+H", this::hold);
+    private final MenuItem refundItem = new MenuItem("환불…", this::refund);
 
     private OrderWindowController(Store store, Order order) {
         this.store = store;
@@ -74,6 +81,13 @@ public class OrderWindowController {
     }
 
     void initialize() {
+        // each window has its own menu (on macOS the menu bar switches with the focused window)
+        window.setMenuBar(new MenuBar(
+                new Menu("주문", shipItem, holdItem, refundItem,
+                        MenuItem.separator(),
+                        MenuItem.role(MenuRole.CLOSE, "창 닫기")),
+                Menu.standard(MenuRole.EDIT_MENU, "편집"),
+                Menu.standard(MenuRole.WINDOW_MENU, "윈도우")));
         render();
         var registration = store.onChange(change -> {
             if (change.order() == null || change.order() == order) {
@@ -109,20 +123,30 @@ public class OrderWindowController {
         shipBtn.setEnabled(order.canShip());
         holdBtn.setEnabled(order.status == Order.Status.PAID);
         refundBtn.setEnabled(order.status != Order.Status.REFUNDED);
+        shipItem.setEnabled(order.canShip());
+        holdItem.setEnabled(order.status == Order.Status.PAID);
+        refundItem.setEnabled(order.status != Order.Status.REFUNDED);
     }
 
     @UiHandler("shipBtn")
     void ship() {
-        store.setStatus(order, Order.Status.SHIPPING, "주문 창");
+        if (order.canShip()) {
+            store.setStatus(order, Order.Status.SHIPPING, "주문 창");
+        }
     }
 
     @UiHandler("holdBtn")
     void hold() {
-        store.setStatus(order, Order.Status.ON_HOLD, "주문 창");
+        if (order.status == Order.Status.PAID) {
+            store.setStatus(order, Order.Status.ON_HOLD, "주문 창");
+        }
     }
 
     @UiHandler("refundBtn")
     void refund() {
+        if (order.status == Order.Status.REFUNDED || confirming) {
+            return;
+        }
         confirming = true;
         window.confirm("환불", order.id + " 주문을 " + Ui.won(order.total()) + " 환불할까요?\n이 작업은 되돌릴 수 없습니다.")
                 .thenAccept(ok -> {
