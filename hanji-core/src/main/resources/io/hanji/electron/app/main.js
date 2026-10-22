@@ -127,9 +127,16 @@ function openWindow(m) {
   origins.add(new URL(m.url).origin);
   if (!isMac) w.setMenu(null); // no menu bar until Java sets one
 
-  const reveal = () => { if (!w.isDestroyed() && !w.isVisible()) w.show(); };
+  // Show the window once: when the page is ready, or after 3 s for slow pages. Only the first reveal counts: on
+  // macOS a minimized window is not visible, and a late fallback must not restore a window minimized meanwhile.
+  let revealed = false;
+  const reveal = () => {
+    if (revealed || w.isDestroyed()) return;
+    revealed = true;
+    if (!w.isVisible()) w.show();
+  };
   w.once('ready-to-show', reveal);
-  setTimeout(reveal, 3000); // slow pages still get a window
+  setTimeout(reveal, 3000);
 
   let timer = null;
   const reportGeometry = () => {
@@ -183,9 +190,8 @@ function closeWindow(id) {
 }
 
 function setState(w, state) {
-  w.hanjiStateRequest = (w.hanjiStateRequest || 0) + 1; // cancels a pending minimize retry
   switch (state) {
-    case 'MINIMIZED': minimize(w); break;
+    case 'MINIMIZED': w.minimize(); break;
     case 'MAXIMIZED': if (w.isMinimized()) w.restore(); w.maximize(); break;
     case 'FULLSCREEN': w.setFullScreen(true); break;
     case 'NORMAL':
@@ -201,26 +207,6 @@ function setState(w, state) {
       break;
     default: throw new Error('Unknown window state ' + state);
   }
-}
-
-// macOS drops minimize() while a zoom animation runs. Right after unmaximize the window already reports NORMAL
-// (the frame starts shrinking), so a minimize requested then is lost: repeat it until the window minimizes.
-function minimize(w) {
-  const request = w.hanjiStateRequest;
-  let minimized = false;
-  const onMinimize = () => { minimized = true; };
-  w.once('minimize', onMinimize);
-  let attempts = 0;
-  const attempt = () => {
-    if (w.isDestroyed()) return;
-    if (minimized || w.isMinimized() || w.hanjiStateRequest !== request || attempts++ >= 20) {
-      w.removeListener('minimize', onMinimize);
-      return;
-    }
-    w.minimize();
-    setTimeout(attempt, 250);
-  };
-  attempt();
 }
 
 function setProperty(w, prop, value) {
