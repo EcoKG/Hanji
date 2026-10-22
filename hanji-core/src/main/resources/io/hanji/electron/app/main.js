@@ -272,8 +272,10 @@ function setWindowMenu(winId, menus) {
   ));
   if (isMac) {
     // macOS has one menu bar per application: keep the app menu, and Edit/Window so Cmd+C/V/W/M keep working.
-    // A first menu with about/hide/quit items is the application's own app menu (macOS shows it under the app name).
-    const ownAppMenu = menus && menus.length && !menus[0].role && hasRole(menus[0].items, ['about', 'hide', 'quit']);
+    // A first menu with macOS app-menu items (about, hide, ...) is the application's own app menu; a File menu
+    // that merely ends with Quit is not.
+    const ownAppMenu = menus && menus.length && !menus[0].role
+        && hasRole(menus[0].items, ['about', 'hide', 'hideOthers', 'unhide']);
     const full = ownAppMenu ? [...template] : [{ role: 'appMenu' }, ...template];
     if (!hasRole(menus, ['editMenu', 'copy', 'paste'])) full.splice(1, 0, { role: 'editMenu' });
     if (!hasRole(menus, ['windowMenu'])) full.push({ role: 'windowMenu' });
