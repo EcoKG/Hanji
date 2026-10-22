@@ -127,9 +127,16 @@ function openWindow(m) {
   origins.add(new URL(m.url).origin);
   if (!isMac) w.setMenu(null); // no menu bar until Java sets one
 
-  const reveal = () => { if (!w.isDestroyed() && !w.isVisible()) w.show(); };
+  // Show the window once: when the page is ready, or after 3 s for slow pages. Only the first reveal counts: on
+  // macOS a minimized window is not visible, and a late fallback must not restore a window minimized meanwhile.
+  let revealed = false;
+  const reveal = () => {
+    if (revealed || w.isDestroyed()) return;
+    revealed = true;
+    if (!w.isVisible()) w.show();
+  };
   w.once('ready-to-show', reveal);
-  setTimeout(reveal, 3000); // slow pages still get a window
+  setTimeout(reveal, 3000);
 
   let timer = null;
   const reportGeometry = () => {
@@ -250,8 +257,12 @@ function setWindowMenu(winId, menus) {
     m.role ? { role: m.role, label: m.label || undefined } : { label: m.label, submenu: buildItems(m.items, { win: winId }) }
   ));
   if (isMac) {
-    // macOS has one menu bar per application: keep the app menu, and Edit/Window so Cmd+C/V/W/M keep working
-    const full = [{ role: 'appMenu' }, ...template];
+    // macOS has one menu bar per application: keep the app menu, and Edit/Window so Cmd+C/V/W/M keep working.
+    // A first menu with macOS app-menu items (about, hide, ...) is the application's own app menu; a File menu
+    // that merely ends with Quit is not.
+    const ownAppMenu = menus && menus.length && !menus[0].role
+        && hasRole(menus[0].items, ['about', 'hide', 'hideOthers', 'unhide']);
+    const full = ownAppMenu ? [...template] : [{ role: 'appMenu' }, ...template];
     if (!hasRole(menus, ['editMenu', 'copy', 'paste'])) full.splice(1, 0, { role: 'editMenu' });
     if (!hasRole(menus, ['windowMenu'])) full.push({ role: 'windowMenu' });
     windowMenus.set(winId, Menu.buildFromTemplate(full));

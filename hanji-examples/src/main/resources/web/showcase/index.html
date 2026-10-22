@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hanji Studio — 주문 관리</title>
+  <link rel="stylesheet" href="showcase.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- ============================================================ sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 4v16M4 12h16"/></svg>
+      </div>
+      <div class="brand-text"><strong>Hanji Studio</strong><span>주문 관리</span></div>
+    </div>
+
+    <nav class="nav" id="nav">
+      <a class="nav-item active" data-page="dashboard" id="nav-dashboard">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        <span>대시보드</span><kbd>⌘1</kbd>
+      </a>
+      <a class="nav-item" data-page="orders" id="nav-orders">
+        <svg viewBox="0 0 24 24"><path d="M4 7h16l-1.5 11.5a2 2 0 0 1-2 1.5h-9a2 2 0 0 1-2-1.5z"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg>
+        <span>주문</span><span class="count" id="pendingCount">0</span>
+      </a>
+      <a class="nav-item" data-page="customers" id="nav-customers">
+        <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/></svg>
+        <span>고객</span><kbd>⌘3</kbd>
+      </a>
+      <a class="nav-item" data-page="settings" id="nav-settings">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        <span>설정</span><kbd>⌘4</kbd>
+      </a>
+    </nav>
+
+    <div class="side-section">
+      <div class="side-title">담당 팀</div>
+      <ul class="team">
+        <li><span class="ava" style="--c:#6366f1">서</span>서유나 <em>온라인</em></li>
+        <li><span class="ava" style="--c:#0ea5e9">한</span>한지민 <em class="away">자리 비움</em></li>
+        <li><span class="ava" style="--c:#10b981">오</span>오태윤 <em>온라인</em></li>
+      </ul>
+    </div>
+
+    <div class="goal">
+      <div class="goal-head"><span>10월 매출 목표</span><strong id="goalPct">0%</strong></div>
+      <div class="bar"><div id="goalBar"></div></div>
+      <p id="goalText">-</p>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- ============================================================ top bar -->
+    <header class="topbar">
+      <div class="titles">
+        <h1 id="pageTitle">대시보드</h1>
+        <p id="subtitle">2026년 10월 22일 기준 · 실시간</p>
+      </div>
+      <div class="segmented" id="range">
+        <button id="range7" data-range="7">7일</button>
+        <button id="range30" data-range="30" class="active">30일</button>
+        <button id="range90" data-range="90">90일</button>
+      </div>
+      <label class="search" id="searchBox">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input id="search" placeholder="주문번호, 고객, 상품 검색">
+        <kbd>⌘K</kbd>
+      </label>
+      <button class="icon-btn" id="notify" title="알림">
+        <svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>
+        <span class="dot"></span>
+      </button>
+      <button class="me" id="profile" title="계정"><span class="ava big" id="meAvatar" style="--c:#4f46e5">-</span></button>
+    </header>
+
+    <!-- ============================================================ dashboard -->
+    <section class="view active" id="view-dashboard">
+      <div class="kpis" id="kpis"></div>
+
+      <div class="row">
+        <div class="card chart">
+          <div class="card-head">
+            <div><h2>매출 추이</h2><p class="muted">단위: 만 원</p></div>
+            <div class="legend"><span class="sw cur"></span>이번 기간 <span class="sw prev"></span>지난 기간</div>
+          </div>
+          <div class="chart-box"><canvas id="revenueChart"></canvas></div>
+        </div>
+        <div class="card channels">
+          <div class="card-head"><div><h2>판매 채널</h2><p class="muted">주문 비중</p></div></div>
+          <div class="donut-wrap"><svg id="donut" viewBox="0 0 120 120"></svg><div class="donut-center"><strong id="donutTotal">-</strong><span>주문</span></div></div>
+          <ul class="channel-list" id="channelList"></ul>
+        </div>
+      </div>
+
+      <div class="row bottom">
+        <div class="card orders">
+          <div class="card-head">
+            <div><h2>최근 주문</h2><p class="muted" id="orderCount">-</p></div>
+            <button class="link" id="viewAllOrders">전체 보기 →</button>
+          </div>
+          <div class="table-wrap"><table id="orders" class="grid"></table></div>
+        </div>
+
+        <aside class="card detail" id="detail">
+          <div class="card-head">
+            <div><h2 id="dId">-</h2><p class="muted" id="dDate">-</p></div>
+            <div class="head-actions">
+              <span class="pill" id="dStatus">-</span>
+              <button class="icon-btn small" id="popOut" title="새 창으로 열기 (⌘O)">
+                <svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="customer">
+            <span class="ava big" id="dAvatar" style="--c:#4f46e5">-</span>
+            <div><strong id="dCustomer">-</strong><span id="dEmail">-</span></div>
+            <span class="channel-tag" id="dChannel">-</span>
+          </div>
+          <ul class="items" id="dItems"></ul>
+          <div class="total"><span>결제 금액</span><strong id="dTotal">-</strong></div>
+          <ol class="timeline" id="dTimeline"></ol>
+          <div class="actions">
+            <button class="btn ghost" id="holdBtn">보류</button>
+            <button class="btn primary" id="shipBtn">배송 시작</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============================================================ orders -->
+    <section class="view" id="view-orders">
+      <div class="toolbar">
+        <div class="tabs" id="statusTabs">
+          <button id="tab-ALL" class="active" data-status="ALL">전체 <span id="cnt-ALL"></span></button>
+          <button id="tab-PAID" data-status="PAID">결제 완료 <span id="cnt-PAID"></span></button>
+          <button id="tab-SHIPPING" data-status="SHIPPING">배송 중 <span id="cnt-SHIPPING"></span></button>
+          <button id="tab-DELIVERED" data-status="DELIVERED">배송 완료 <span id="cnt-DELIVERED"></span></button>
+          <button id="tab-ON_HOLD" data-status="ON_HOLD">보류 <span id="cnt-ON_HOLD"></span></button>
+        </div>
+        <div class="spacer"></div>
+        <button class="btn ghost small" id="exportBtn">
+          <svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>내보내기
+        </button>
+        <button class="btn primary small" id="newOrderBtn">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>새 주문 <kbd>⌘N</kbd>
+        </button>
+      </div>
+      <div class="card fill">
+        <div class="table-wrap tall"><table id="allOrders" class="grid"></table></div>
+        <p class="hint">행을 더블클릭하면 주문 상세가 새 창으로 열립니다 · 헤더를 클릭하면 정렬합니다</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ customers -->
+    <section class="view" id="view-customers">
+      <div class="toolbar">
+        <div class="segmented" id="gradeFilter">
+          <button id="grade-ALL" class="active" data-grade="ALL">전체</button>
+          <button id="grade-VIP" data-grade="VIP">VIP</button>
+          <button id="grade-GOLD" data-grade="GOLD">골드</button>
+          <button id="grade-NEW" data-grade="NEW">신규</button>
+        </div>
+        <div class="spacer"></div>
+        <p class="muted" id="customerCount">-</p>
+      </div>
+      <div class="customer-grid" id="customerGrid"></div>
+    </section>
+
+    <!-- ============================================================ settings -->
+    <section class="view" id="view-settings">
+      <div class="settings">
+        <div class="card setting-card">
+          <h2>창</h2>
+          <div class="setting">
+            <div><strong>항상 위에 표시</strong><p>다른 창보다 앞에 둡니다</p></div>
+            <label class="switch"><input type="checkbox" id="alwaysOnTop"><span></span></label>
+          </div>
+          <div class="setting">
+            <div><strong>창 크기</strong><p>현재 <span id="sizeNow">-</span></p></div>
+            <div class="button-row">
+              <button class="btn ghost small" id="size1280">1280×800</button>
+              <button class="btn ghost small" id="size1440">1440×900</button>
+              <button class="btn ghost small" id="sizeMax">최대화</button>
+            </div>
+          </div>
+          <div class="setting">
+            <div><strong>전체 화면</strong><p>메뉴: 보기 › 전체 화면</p></div>
+            <label class="switch"><input type="checkbox" id="fullScreen"><span></span></label>
+          </div>
+        </div>
+
+        <div class="card setting-card">
+          <h2>모양</h2>
+          <div class="setting">
+            <div><strong>테마</strong><p>시스템 설정을 따르거나 직접 고릅니다</p></div>
+            <div class="segmented" id="theme">
+              <button id="theme-system" data-theme="system" class="active">시스템</button>
+              <button id="theme-light" data-theme="light">라이트</button>
+              <button id="theme-dark" data-theme="dark">다크</button>
+            </div>
+          </div>
+          <div class="setting">
+            <div><strong>강조색</strong><p>버튼과 선택 표시 색</p></div>
+            <div class="swatches" id="accents">
+              <button class="swatch active" data-accent="indigo" id="accent-indigo" style="--c:#4f46e5" title="인디고"></button>
+              <button class="swatch" data-accent="blue" id="accent-blue" style="--c:#0284c7" title="블루"></button>
+              <button class="swatch" data-accent="green" id="accent-green" style="--c:#059669" title="그린"></button>
+              <button class="swatch" data-accent="pink" id="accent-pink" style="--c:#db2777" title="핑크"></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card setting-card">
+          <h2>계정</h2>
+          <div class="setting">
+            <div class="who"><span class="ava big" id="accountAvatar" style="--c:#4f46e5">-</span>
+              <div><strong id="accountName">-</strong><p id="accountRole">-</p></div></div>
+            <button class="btn ghost small danger" id="logoutBtn">로그아웃</button>
+          </div>
+          <div class="setting">
+            <div><strong>실행 환경</strong><p id="runtimeInfo">-</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ============================================================ modals -->
+<dialog class="modal" id="newOrderModal">
+  <form id="newOrderForm" class="modal-body">
+    <div class="modal-head">
+      <div><h2>새 주문 등록</h2><p class="muted">필수 항목을 입력하세요</p></div>
+      <button type="button" class="icon-btn small" id="newOrderClose" title="닫기">
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="form-grid">
+      <label>고객 이름<input id="noCustomer" name="customer" autocomplete="off" placeholder="홍길동"></label>
+      <label>이메일<input id="noEmail" name="email" autocomplete="off" placeholder="name@example.com"></label>
+      <label class="wide">상품<select id="noProduct" name="product"></select></label>
+      <label>수량<input id="noQty" name="quantity" type="number" min="1" max="99" value="1"></label>
+      <label>판매 채널<select id="noChannel" name="channel"></select></label>
+      <label class="wide">메모<textarea id="noMemo" name="memo" rows="2" placeholder="선택 입력"></textarea></label>
+    </div>
+    <div class="form-summary"><span>예상 결제 금액</span><strong id="noTotal">₩0</strong></div>
+    <p class="form-error" id="noError"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn ghost" id="newOrderCancel">취소</button>
+      <button type="submit" class="btn primary" id="newOrderSubmit">주문 등록</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="modal" id="customerModal">
+  <div class="modal-body">
+    <div class="modal-head">
+      <div class="who"><span class="ava xl" id="cmAvatar" style="--c:#4f46e5">-</span>
+        <div><h2 id="cmName">-</h2><p class="muted" id="cmEmail">-</p></div></div>
+      <span class="grade" id="cmGrade">-</span>
+    </div>
+    <div class="stats">
+      <div><span>주문</span><strong id="cmOrders">-</strong></div>
+      <div><span>누적 결제</span><strong id="cmSpent">-</strong></div>
+      <div><span>가입</span><strong id="cmSince">-</strong></div>
+    </div>
+    <h3>최근 주문</h3>
+    <ul class="mini-orders" id="cmOrderList"></ul>
+    <div class="modal-actions">
+      <button type="button" class="btn ghost" id="customerClose">닫기</button>
+      <button type="button" class="btn primary" id="customerNewOrder" autofocus>이 고객으로 새 주문</button>
+    </div>
+  </div>
+</dialog>
+
+<div class="toasts" id="toasts"></div>
+<script src="showcase.js"></script>
+</body>
+</html>

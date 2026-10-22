@@ -118,8 +118,17 @@ final class WindowChannel {
         lastDocumentAt = System.currentTimeMillis();
     }
 
-    synchronized void markUnload() {
+    /**
+     * The page instance {@code pid} is unloading (its pagehide beacon). Returns false and changes nothing when that
+     * page was already replaced: on slow machines the beacon of a reloaded page can arrive after the new page
+     * connected, and must not make the window look closed.
+     */
+    synchronized boolean markUnload(String pid) {
+        if (pageId != null && !pageId.equals(pid)) {
+            return false;
+        }
         lastUnloadSeq = ++eventSeq;
+        return true;
     }
 
     synchronized void close() {

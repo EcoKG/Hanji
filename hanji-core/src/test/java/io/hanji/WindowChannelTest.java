@@ -44,7 +44,7 @@ class WindowChannelTest {
     @Test
     void closedPageIsNotAlive() throws InterruptedException {
         connect("p1");
-        channel.markUnload(); // pagehide without a following document request: the window was closed
+        channel.markUnload("p1"); // pagehide without a following document request: the window was closed
         assertFalse(channel.isAlive());
     }
 
@@ -52,7 +52,7 @@ class WindowChannelTest {
     void reloadingPageStaysAliveUntilItReconnects() throws InterruptedException {
         connect("p1");
         channel.markDocumentRequest(); // the browser fetches the new document first ...
-        channel.markUnload();          // ... then unloads the old one
+        channel.markUnload("p1");      // ... then unloads the old one
         assertTrue(channel.isAlive(), "a page that is still loading after a reload must not count as closed");
     }
 
@@ -60,12 +60,23 @@ class WindowChannelTest {
     void reloadedPageIsAliveAgainAfterReconnecting() throws InterruptedException {
         connect("p1");
         channel.markDocumentRequest();
-        channel.markUnload();
+        channel.markUnload("p1");
         Thread old = stream;
         connect("p2");                 // new page instance connects (replaces the old stream)
         old.join(5000);
         assertTrue(channel.isAlive());
-        channel.markUnload();          // and is closed later without another document request
+        channel.markUnload("p2");      // and is closed later without another document request
         assertFalse(channel.isAlive());
+    }
+
+    @Test
+    void lateUnloadBeaconOfAReplacedPageIsIgnored() throws InterruptedException {
+        connect("p1");
+        channel.markDocumentRequest();
+        Thread old = stream;
+        connect("p2");                 // the new page instance connects first ...
+        old.join(5000);
+        assertFalse(channel.markUnload("p1"), "beacon of a replaced page"); // ... and the old page's pagehide beacon arrives late
+        assertTrue(channel.isAlive(), "a late beacon of the replaced page must not close the window");
     }
 }

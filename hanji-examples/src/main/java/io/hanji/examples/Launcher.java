@@ -3,11 +3,12 @@ package io.hanji.examples;
 import io.hanji.Hanji;
 import io.hanji.examples.components.ComponentsApp;
 import io.hanji.examples.monitor.MonitorApp;
+import io.hanji.examples.showcase.ShowcaseApp;
 import io.hanji.examples.todo.TodoApp;
 
 import java.util.Arrays;
 
-/** Starts one of the examples: {@code todo} (default), {@code components} or {@code monitor}. */
+/** Starts one of the examples: {@code todo} (default), {@code components}, {@code monitor} or {@code showcase}. */
 public final class Launcher {
 
     private Launcher() {
@@ -26,8 +27,11 @@ public final class Launcher {
             case "monitor":
                 Hanji.launch(MonitorApp.class, rest);
                 break;
+            case "showcase":
+                Hanji.launch(ShowcaseApp.class, rest);
+                break;
             default:
-                System.err.println("Unknown example '" + example + "'. Use: todo | components | monitor");
+                System.err.println("Unknown example '" + example + "'. Use: todo | components | monitor | showcase");
                 System.exit(2);
         }
     }

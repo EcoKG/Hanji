@@ -391,6 +391,22 @@ class BrowserE2ETest {
     }
 
     @Test
+    @Order(17)
+    void lateReloadNotificationKeepsTheReadyPage() throws Exception {
+        // The event stream thread may report a reload after the POST thread already delivered the new page's
+        // 'ready' (two HTTP threads race). That late notification must not reset the page that is now running.
+        String pid = String.valueOf(cdp.eval("hanji.pageId"));
+        onUi(() -> {
+            window.onPageReplaced(pid);
+            return null;
+        });
+        cdp.eval("(() => { const n = document.getElementById('name'); n.value = 'Late';"
+                + " n.dispatchEvent(new Event('input', {bubbles: true}));"
+                + " document.getElementById('greet').click(); })()");
+        cdp.waitFor("document.getElementById('out').textContent === 'Hello, Late'");
+    }
+
+    @Test
     @Order(20)
     void programmaticWindowWithComponents() throws Exception {
         Label[] status = new Label[1];
@@ -468,17 +484,27 @@ class BrowserE2ETest {
         return f.get(10, TimeUnit.SECONDS);
     }
 
+    /** The DevTools port, or null while the file is missing, empty or still locked by Chromium (Windows). */
+    private static String readPort(Path portFile) {
+        try {
+            List<String> lines = Files.readAllLines(portFile);
+            return lines.isEmpty() || lines.get(0).isBlank() ? null : lines.get(0).trim();
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private String pageWebSocketUrl() throws Exception {
         Path portFile = profile.resolve("DevToolsActivePort");
         long deadline = System.currentTimeMillis() + 20_000;
-        while (!Files.exists(portFile) || Files.readAllLines(portFile).isEmpty()) {
+        String port;
+        while ((port = readPort(portFile)) == null) {
             if (System.currentTimeMillis() > deadline || !chrome.isAlive()) {
                 throw new IOException("Chromium did not start (DevToolsActivePort missing)");
             }
             Thread.sleep(50);
         }
-        String port = Files.readAllLines(portFile).get(0).trim();
         HttpClient http = HttpClient.newBuilder().proxy(HttpClient.Builder.NO_PROXY).build();
         while (true) {
             String body = http.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/json/list")).build(),

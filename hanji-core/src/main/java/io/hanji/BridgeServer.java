@@ -288,8 +288,9 @@ final class BridgeServer {
 
         if (seq < 0) {
             // navigator.sendBeacon on pagehide: the page may be closing (or just reloading)
-            channel.markUnload();
-            runtime.post(window::onUnload);
+            if (channel.markUnload(pid)) {
+                runtime.post(window::onUnload);
+            }
             respond(ex, 204, null, null);
             return;
         }

@@ -991,7 +991,10 @@ public final class Window {
 
     /** A different page instance connected (e.g. reload): forget the old page and wait for its ready message. */
     void onPageReplaced(String newPageId) {
-        if (state == State.CLOSED) {
+        // The stream and POST requests of a reloaded page run on different threads, so this notification can
+        // arrive after the new page's 'ready' was handled. That page is current already: resetting would drop
+        // the listeners its controller just registered.
+        if (state == State.CLOSED || (pageReady && newPageId.equals(pageId))) {
             return;
         }
         Log.info("Page of window '" + title + "' was reloaded; re-initializing");

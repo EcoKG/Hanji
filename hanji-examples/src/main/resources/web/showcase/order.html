@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>주문 상세</title>
+  <link rel="stylesheet" href="showcase.css">
+</head>
+<body>
+<div class="order-win">
+  <header class="ow-head">
+    <span class="ava big" id="avatar" style="--c:#4f46e5">-</span>
+    <div class="titles">
+      <h1 id="orderId">-</h1>
+      <p id="created">-</p>
+    </div>
+    <span class="pill" id="status">-</span>
+  </header>
+
+  <div class="ow-body">
+    <div class="card">
+      <h3>고객</h3>
+      <dl class="meta">
+        <dt>이름</dt><dd id="customer">-</dd>
+        <dt>이메일</dt><dd id="email">-</dd>
+        <dt>판매 채널</dt><dd id="channel">-</dd>
+        <dt>등급</dt><dd><span class="grade" id="grade">-</span></dd>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h3>상품</h3>
+      <ul class="items" id="items"></ul>
+      <div class="total"><span>결제 금액</span><strong id="total">-</strong></div>
+    </div>
+
+    <div class="card">
+      <h3>진행 상황</h3>
+      <ol class="timeline" id="timeline"></ol>
+    </div>
+
+    <div class="card">
+      <h3>메모</h3>
+      <ul class="notes" id="notes"></ul>
+      <textarea class="note" id="noteInput" rows="2" placeholder="메모를 입력하고 ⌘/Ctrl+Enter"></textarea>
+    </div>
+  </div>
+
+  <footer class="ow-foot">
+    <button class="btn danger" id="refundBtn">환불</button>
+    <button class="btn" id="holdBtn">보류</button>
+    <button class="btn primary" id="shipBtn">배송 시작</button>
+  </footer>
+</div>
+</body>
+</html>
